@@ -79,14 +79,11 @@
 </head>
 <body class="px-4 md:px-10 pb-20 font-nanum-ac text-black">
 
-    <!-- Fixed Container for Notes -->
     <div id="sticky-notes-container" class="fixed inset-0 pointer-events-none overflow-visible" style="z-index: 999;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
-        <!-- 상단 고정 영역 -->
         <div class="sticky top-0 z-40 bg-[#f8f9fa] pt-4 md:pt-8">
             <header class="pb-4 flex flex-col xl:flex-row items-center justify-between border-b border-gray-200 gap-4 mb-2">
-                <!-- 검색 영역 -->
                 <div class="flex flex-wrap justify-start items-center gap-3 w-full flex-1 ml-2">
                     <form action="https://search.naver.com/search.naver" method="get" target="_blank" class="flex items-center relative flex-1 min-w-[160px] max-w-[330px]" onsubmit="setTimeout(() => this.reset(), 100)">
                         <input type="text" name="query" placeholder="네이버 검색" class="pl-8 pr-3 py-1.5 border border-[#03c75a] rounded-full text-[13px] focus:outline-none focus:ring-2 focus:ring-[#03c75a]/30 w-full bg-gray-50 focus:bg-white transition-colors" autocomplete="off">
@@ -98,15 +95,13 @@
                     </form>
                 </div>
 
-                <!-- 우측 메뉴 영역 -->
                 <div class="flex flex-wrap justify-start xl:justify-end items-center gap-2 w-full xl:w-auto shrink-0 mr-2 ml-2 xl:ml-0">
-                    <form action="https://search.shopping.naver.com/search/all" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[155px]" onsubmit="setTimeout(() => this.reset(), 100)">
+                    <form action="https://search.shopping.naver.com/search/all" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[165px]" onsubmit="setTimeout(() => this.reset(), 100)">
                         <input type="text" name="query" placeholder="네이버 최저가" class="pl-8 pr-3 py-1.5 border border-[#03c75a] rounded-full text-[13px] text-[#03c75a] focus:outline-none focus:ring-2 focus:ring-[#03c75a]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
                         <i class="fas fa-shopping-cart absolute left-3 text-[#03c75a] text-xs"></i>
                     </form>
 
-                    <!-- ✨ 컴퓨존 검색창 복구 -->
-                    <form action="https://www.compuzone.co.kr/search/search.htm" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[155px]" onsubmit="setTimeout(() => this.reset(), 100)">
+                    <form action="https://www.compuzone.co.kr/search/search.htm" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[165px]" onsubmit="setTimeout(() => this.reset(), 100)">
                         <input type="text" name="SearchProductKey" placeholder="컴퓨존 검색" class="pl-8 pr-3 py-1.5 border border-[#0a53a8] rounded-full text-[13px] text-[#0a53a8] placeholder-[#0a53a8]/70 focus:outline-none focus:ring-2 focus:ring-[#0a53a8]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
                         <i class="fas fa-desktop absolute left-3 text-[#0a53a8] text-xs"></i>
                     </form>
@@ -157,18 +152,15 @@
 
         <div id="dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mt-2"></div>
 
-        <!-- 하단 업무 도구 섹션 -->
         <div class="mt-5 border-t border-gray-200 pt-8 pb-20">
             <div class="flex flex-col md:flex-row items-center mb-6 gap-4">
                 <div class="flex items-center gap-3 shrink-0">
-                    <!-- ✨ 구글 캘린더 아이콘 복구 -->
                     <a href="https://calendar.google.com/" target="_blank" title="구글 캘린더 열기" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 hover:bg-blue-50 transition-colors">
                         <i class="fas fa-calendar-alt text-blue-500"></i>
                     </a>
                     <button type="button" onclick="openCalendarSettings()" class="text-lg font-bold text-gray-800 hover:text-blue-600 transition-colors">업무 일정</button>
                     <div id="exchange-rate-display" class="ml-4 flex items-center gap-2"></div>
                 </div>
-                <!-- ✨ 카카오 일정 버튼 복구 (우측) -->
                 <div class="ml-auto">
                     <a href="https://calendar.kakao.com" target="_blank" class="flex items-center gap-2 bg-[#FEE500] hover:bg-[#FDD800] text-[#000000] px-4 py-2.5 rounded-lg font-bold text-[13px] shadow-sm transition-colors shrink-0">
                         <i class="fas fa-calendar-plus"></i> 카카오 일정
@@ -188,7 +180,7 @@
                         </div>
                         <div class="p-2.5 border-b border-gray-100">
                             <div class="flex gap-2">
-                                <input type="text" id="todoInput" placeholder="할일 입력..." class="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <input type="text" id="todoInput" placeholder="할일 입력..." class="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                 <button id="addTodoBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">추가</button>
                             </div>
                         </div>
@@ -200,8 +192,8 @@
             </div>
 
             <div class="mt-6 flex flex-col gap-4">
-                <!-- 원가 계산기 -->
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 overflow-x-auto w-full xl:w-max">
+                <!-- 수입 원가 계산기 -->
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max">
                     <div class="flex flex-wrap items-center justify-start gap-4">
                         <div class="flex flex-col">
                             <label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold uppercase">USD Price</label>
@@ -214,13 +206,23 @@
                         </div>
                         <span class="text-gray-400 mt-3 font-bold">×</span>
                         <div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div>
+                        <span class="text-gray-400 mt-3 font-bold">=</span>
+                        <div class="flex flex-col">
+                            <label class="text-[9px] text-blue-500 mb-0.5 ml-1 font-bold uppercase">Total USD</label>
+                            <div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px] text-right">$ 0.00</div>
+                        </div>
                         <span class="text-gray-400 mt-3 font-bold">×</span>
                         <div class="flex flex-col">
                             <label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold uppercase">Exchange Rate</label>
                             <input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="calculateTotal()">
                         </div>
                         <span class="text-gray-400 mt-3 font-bold">=</span>
-                        <div id="calc-total-display" class="px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-lg text-blue-700 font-extrabold min-w-[150px] text-right">0 원</div>
+                        <div class="flex items-center gap-2">
+                            <div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div>
+                            <a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" title="네이버 환율 상세 정보" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
+                                <span class="text-[#03c75a] font-black text-[15px]">N</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -317,30 +319,39 @@
         const getSitesCol = (uid) => collection(db, getUserRoot(uid), 'sites');
         const getTodosCol = (uid) => collection(db, getUserRoot(uid), 'todos');
 
-        // --- Sticky Note Functions (Fixed Position) ---
+        // --- Utils & UI Functions ---
+        window.updateCalendarIframe = () => {
+            const iframe = document.getElementById('calendar-iframe-month');
+            if (iframe) {
+                const baseSrc = `src=${encodeURIComponent(calendarId)}&ctz=Asia%2FSeoul&bgcolor=%23ffffff`;
+                iframe.src = `https://calendar.google.com/calendar/embed?${baseSrc}&showTitle=0&showNav=1&showPrint=0&showTabs=1&showCalendars=0&showTz=0&mode=MONTH&wkst=1`;
+            }
+        };
+
+        window.showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg; toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('opacity-100'), 10);
+            setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
+        };
+
+        const requireAuth = () => { if (!currentUser) { showToast('로그인이 필요한 기능입니다.'); return false; } return true; };
+
+        // --- Sticky Note Functions ---
         window.addStickyNote = async () => {
             if (!requireAuth()) return;
             const newNoteRef = doc(getStickyCol(currentUser.uid));
             await setDoc(newNoteRef, {
                 text: '',
-                x: 100,
-                y: 150,
-                width: 220,
-                height: 220,
+                x: 100, y: 150,
+                width: 220, height: 220,
                 color: '#fff9c4',
                 createdAt: Date.now()
             });
         };
 
-        window.deleteStickyNote = async (id) => {
-            if (!requireAuth()) return;
-            await deleteDoc(doc(getStickyCol(currentUser.uid), id));
-        };
-
-        window.updateStickyNote = async (id, data) => {
-            if (!requireAuth()) return;
-            await updateDoc(doc(getStickyCol(currentUser.uid), id), data);
-        };
+        window.deleteStickyNote = async (id) => { if (!requireAuth()) return; await deleteDoc(doc(getStickyCol(currentUser.uid), id)); };
+        window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(currentUser.uid), id), data); };
 
         let activeDragId = null;
         let dragStartPos = { x: 0, y: 0 };
@@ -361,10 +372,8 @@
         function handleStickyMouseMove(e) {
             if (!activeDragId) return;
             const noteEl = document.getElementById(`note-${activeDragId}`);
-            const dx = e.clientX - dragStartPos.x;
-            const dy = e.clientY - dragStartPos.y;
-            noteEl.style.left = `${noteStartPos.x + dx}px`;
-            noteEl.style.top = `${noteStartPos.y + dy}px`;
+            noteEl.style.left = `${noteStartPos.x + (e.clientX - dragStartPos.x)}px`;
+            noteEl.style.top = `${noteStartPos.y + (e.clientY - dragStartPos.y)}px`;
         }
 
         async function handleStickyMouseUp() {
@@ -412,77 +421,7 @@
             });
         }
 
-        // --- Core Dashboard Functions ---
-        window.showToast = (msg) => {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg; toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('opacity-100'), 10);
-            setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
-        };
-
-        window.updateCalendarIframe = () => {
-            const iframe = document.getElementById('calendar-iframe-month');
-            if (iframe) {
-                const baseSrc = `src=${encodeURIComponent(calendarId)}&ctz=Asia%2FSeoul&bgcolor=%23ffffff`;
-                iframe.src = `https://calendar.google.com/calendar/embed?${baseSrc}&showTitle=0&showNav=1&showPrint=0&showTabs=1&showCalendars=0&showTz=0&mode=MONTH&wkst=1`;
-            }
-        };
-
-        const requireAuth = () => { if (!currentUser) { showToast('로그인이 필요한 기능입니다.'); return false; } return true; };
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            const loginBtn = document.getElementById('login-btn');
-            const profileArea = document.getElementById('user-profile-area');
-            if (user && !user.isAnonymous) {
-                loginBtn.classList.add('hidden'); profileArea.classList.remove('hidden');
-                document.getElementById('user-display-name').innerText = user.displayName || user.email.split('@')[0];
-                if (user.photoURL) { 
-                    const img = document.getElementById('user-avatar');
-                    img.src = user.photoURL; img.classList.remove('hidden'); 
-                    document.getElementById('user-avatar-fallback').classList.add('hidden');
-                }
-                startListeners(user.uid);
-                showToast(`환영합니다, ${user.displayName || '사용자'}님!`);
-            } else {
-                loginBtn.classList.remove('hidden'); profileArea.classList.add('hidden');
-                unsubs.forEach(u => u()); unsubs = [];
-                categories = ['기본 카테고리']; sites = []; stickyNotes = []; render(); renderTodos(); renderStickyNotes(); updateCalendarIframe();
-            }
-        });
-
-        function startListeners(uid) {
-            unsubs.forEach(u => u()); unsubs = [];
-            unsubs.push(onSnapshot(getConfigDoc(uid), (snap) => {
-                if (snap.exists()) {
-                    const data = snap.data();
-                    if (data.categories) categories = data.categories;
-                    if (data.calendarId) { calendarId = data.calendarId; updateCalendarIframe(); }
-                    render();
-                } else {
-                    setDoc(getConfigDoc(uid), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com" });
-                }
-            }));
-            unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); render(); }));
-            unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); renderTodos(); }));
-            unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderStickyNotes(); }));
-        }
-
-        // --- Drag & Drop for Categories ---
-        let dragCatIdx = -1;
-        window.handleDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragCatIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/category', 'true'); };
-        window.handleDragEnd = (e) => { e.target.classList.remove('opacity-40'); };
-        window.handleDrop = async (e, dropIdx) => {
-            e.preventDefault();
-            if (!e.dataTransfer.types.includes('application/category')) return;
-            if(dragCatIdx !== dropIdx && dragCatIdx !== -1 && currentUser) {
-                const moved = categories.splice(dragCatIdx, 1)[0];
-                categories.splice(dropIdx, 0, moved);
-                await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true });
-            }
-        };
-
-        // --- Calculations ---
+        // --- Core Logics ---
         window.calculateFedEx = () => {
             const L = parseFloat(document.getElementById('fedex-l').value) || 0;
             const W = parseFloat(document.getElementById('fedex-w').value) || 0;
@@ -502,7 +441,10 @@
             const p = parseFloat(document.getElementById('calc-price').value) || 0;
             const s = parseFloat(document.getElementById('calc-shipping').value) || 0;
             const r = parseFloat(document.getElementById('calc-rate-input').value) || 0;
-            document.getElementById('calc-total-display').innerText = Math.round((p + s) * 1.08 * r).toLocaleString('ko-KR') + ' 원';
+            const totalUSD = (p + s) * 1.08;
+            const totalKRW = totalUSD * r;
+            document.getElementById('calc-total-usd').innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('calc-total-display').innerText = Math.round(totalKRW).toLocaleString('ko-KR') + ' 원';
             window.calculateFedEx();
         };
 
@@ -513,36 +455,65 @@
                 const usd = data.find(d => d.name === 'USDKRW=X');
                 if (usd) {
                     const sendRate = usd.rate + 9.8;
-                    document.getElementById('exchange-rate-display').innerHTML = `<a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="text-xs font-bold text-gray-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm">1 USD = <span class="text-red-500">${sendRate.toLocaleString('ko-KR', {minimumFractionDigits: 2})}</span> 원</a>`;
+                    document.getElementById('exchange-rate-display').innerHTML = `<a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="text-xs font-bold text-gray-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">1 USD = <span class="text-red-500">${sendRate.toLocaleString('ko-KR', {minimumFractionDigits: 2})}</span> 원</a>`;
                     const input = document.getElementById('calc-rate-input');
                     if (input) { input.value = sendRate.toFixed(2); window.calculateTotal(); }
                 }
             } catch (e) {}
         };
 
-        // --- Category/Site Mgmt ---
-        window.addCategory = async () => { if (!requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); } };
-        window.renameCategory = async (oldName) => { if (!requireAuth()) return; const n = prompt(`'${oldName}' 이름 변경:`, oldName); if (n && n.trim() !== oldName) { const i = categories.indexOf(oldName); categories[i] = n.trim(); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); const batch = sites.filter(s => s.category === oldName).map(s => updateDoc(doc(getSitesCol(currentUser.uid), s.id), { category: n.trim() })); await Promise.all(batch); } };
-        window.deleteCategory = async (n) => { if (!requireAuth()) return; if (confirm(`'${n}' 삭제?`)) { const nc = categories.filter(c => c !== n); await setDoc(getConfigDoc(currentUser.uid), { categories: nc, calendarId }, { merge: true }); const del = sites.filter(s => s.category === n).map(s => deleteDoc(doc(getSitesCol(currentUser.uid), s.id))); await Promise.all(del); } };
-        window.openQuickAddModal = (c) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = c; document.getElementById('modalTitle').innerText = `'${c}' 사이트 추가`; document.getElementById('siteName').value = ""; document.getElementById('siteUrl').value = ""; document.getElementById('siteModal').classList.remove('hidden'); };
-        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
-        window.submitSite = async () => { if (!requireAuth()) return; const n = document.getElementById('siteName').value.trim(); let u = document.getElementById('siteUrl').value.trim(); const c = document.getElementById('modalCategory').value; if (!n || !u) return; if (!u.startsWith('http')) u = 'https://' + u; await setDoc(doc(getSitesCol(currentUser.uid)), { name: n, url: u, category: c, createdAt: Date.now(), order: sites.filter(s => s.category === c).length + 1 }); closeModal(); };
-        window.deleteSite = async (id) => { if (!requireAuth()) return; if (confirm('삭제?')) await deleteDoc(doc(getSitesCol(currentUser.uid), id)); };
+        // --- Auth & Listeners ---
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const loginBtn = document.getElementById('login-btn');
+            const profileArea = document.getElementById('user-profile-area');
+            if (user && !user.isAnonymous) {
+                loginBtn.classList.add('hidden'); profileArea.classList.remove('hidden');
+                document.getElementById('user-display-name').innerText = user.displayName || user.email.split('@')[0];
+                if (user.photoURL) { 
+                    const img = document.getElementById('user-avatar');
+                    img.src = user.photoURL; img.classList.remove('hidden'); 
+                    document.getElementById('user-avatar-fallback').classList.add('hidden');
+                }
+                startListeners(user.uid);
+                showToast(`환영합니다, ${user.displayName || '사용자'}님!`);
+            } else {
+                loginBtn.classList.remove('hidden'); profileArea.classList.add('hidden');
+                unsubs.forEach(u => u()); unsubs = [];
+                categories = ['기본 카테고리']; sites = []; stickyNotes = []; render(); renderTodos(); renderStickyNotes(); window.updateCalendarIframe();
+            }
+        });
 
-        // --- Todos ---
-        window.addTodo = async () => { if (!requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(); const p = `[${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
-        window.toggleTodo = async (id, done) => { if (!requireAuth()) return; await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !done }); };
-        window.deleteTodo = async (id) => { if (!requireAuth()) return; await deleteDoc(doc(getTodosCol(currentUser.uid), id)); };
-        function renderTodos() {
-            const l = document.getElementById('todoList'); if (!l) return;
-            document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
-            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map((t, i) => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1">${t.text}</span></div><div class="opacity-0 group-hover:opacity-100 flex gap-1"><button onclick="deleteTodo('${t.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-[9px]"></i></button></div></li>`).join('');
+        function startListeners(uid) {
+            unsubs.forEach(u => u()); unsubs = [];
+            unsubs.push(onSnapshot(getConfigDoc(uid), (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.categories) categories = data.categories;
+                    if (data.calendarId) { calendarId = data.calendarId; window.updateCalendarIframe(); }
+                    render();
+                } else {
+                    setDoc(getConfigDoc(uid), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com" });
+                }
+            }));
+            unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); render(); }));
+            unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); renderTodos(); }));
+            unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderStickyNotes(); }));
         }
 
-        window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
-        window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
-        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); closeCalendarModal(); showToast('저장완료'); } };
+        // --- Category Drag ---
+        let dragCatIdx = -1;
+        window.handleDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragCatIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/category', 'true'); };
+        window.handleDragEnd = (e) => { e.target.classList.remove('opacity-40'); };
+        window.handleDrop = async (e, dropIdx) => {
+            e.preventDefault(); if (!e.dataTransfer.types.includes('application/category')) return;
+            if(dragCatIdx !== dropIdx && dragCatIdx !== -1 && currentUser) {
+                const moved = categories.splice(dragCatIdx, 1)[0]; categories.splice(dropIdx, 0, moved);
+                await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true });
+            }
+        };
 
+        // --- Render Functions ---
         function render() {
             const s = document.getElementById('sticky-dashboard'); const m = document.getElementById('dashboard');
             s.innerHTML = ''; m.innerHTML = ''; if (!categories.length) return;
@@ -561,8 +532,25 @@
             });
         }
 
+        window.addTodo = async () => { if (!requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(); const p = `[${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
+        window.toggleTodo = async (id, done) => { if (!requireAuth()) return; await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !done }); };
+        window.deleteTodo = async (id) => { if (!requireAuth()) return; await deleteDoc(doc(getTodosCol(currentUser.uid), id)); };
+        function renderTodos() {
+            const l = document.getElementById('todoList'); if (!l) return;
+            document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
+            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map((t, i) => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1">${t.text}</span></div><div class="opacity-0 group-hover:opacity-100 flex gap-1"><button onclick="deleteTodo('${t.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-[9px]"></i></button></div></li>`).join('');
+        }
+
+        window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
+        window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
+        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); closeCalendarModal(); showToast('저장완료'); } };
+        window.openQuickAddModal = (c) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = c; document.getElementById('siteModal').classList.remove('hidden'); };
+        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
+        window.submitSite = async () => { if (!requireAuth()) return; const n = document.getElementById('siteName').value.trim(); let u = document.getElementById('siteUrl').value.trim(); const c = document.getElementById('modalCategory').value; if (!n || !u) return; if (!u.startsWith('http')) u = 'https://' + u; await setDoc(doc(getSitesCol(currentUser.uid)), { name: n, url: u, category: c, createdAt: Date.now(), order: sites.filter(s => s.category === c).length + 1 }); closeModal(); };
+        window.deleteSite = async (id) => { if (!requireAuth()) return; if (confirm('삭제?')) await deleteDoc(doc(getSitesCol(currentUser.uid), id)); };
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); showToast('로그아웃 완료'); } catch (e) {} };
+
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
