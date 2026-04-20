@@ -96,7 +96,7 @@
     <div id="sticky-notes-container" class="fixed inset-0 pointer-events-none overflow-visible" style="z-index: 999;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
-        <!-- Header (Sticky z-index: 1100) -->
+        <!-- Header -->
         <div class="sticky top-0 z-[1100] bg-[#f8f9fa] border-b border-gray-200">
             <header class="pt-4 md:pt-6 pb-2 flex flex-col xl:flex-row items-center justify-between gap-4">
                 <div class="flex flex-wrap justify-start items-center gap-3 w-full flex-1 ml-2">
@@ -214,6 +214,7 @@
                 </div>
             </div>
 
+            <!-- 동적 도구 영역 -->
             <div id="business-tools-container" class="mt-6 flex flex-col gap-4"></div>
         </div>
     </div>
@@ -229,8 +230,8 @@
             <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100">
                 <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">새 바로가기 추가</p>
                 <div class="grid grid-cols-1 gap-3">
-                    <input type="text" id="newMyName" placeholder="이름" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="text" id="newMyUrl" placeholder="URL" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="newMyName" placeholder="이름" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
+                    <input type="text" id="newMyUrl" placeholder="URL" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
                     <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors">추가하기</button>
                 </div>
             </div>
@@ -258,7 +259,7 @@
         </div>
     </div>
 
-    <!-- 일반 사이트 추가 모달 -->
+    <!-- 사이트 추가 모달 -->
     <div id="siteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-sm:max-w-sm border">
             <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">사이트 추가</h3>
@@ -306,7 +307,6 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // --- Core Variables ---
         let currentUser = null;
         let sites = [], categories = [], mySites = [], todos = [], stickyNotes = [], unsubs = [];
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
@@ -315,7 +315,7 @@
 
         const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
 
-        // --- GLOBAL FUNCTIONS - DEFINED EARLY FOR RELIABILITY ---
+        // --- GLOBAL FUNCTIONS ---
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
@@ -355,7 +355,7 @@
             } catch (e) {}
         };
 
-        // --- Core Business Logics ---
+        // --- Business Logic ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
             const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
@@ -375,19 +375,15 @@
             if (kD) kD.innerText = '≈ ' + Math.round(totalUSD * rate).toLocaleString('ko-KR') + ' 원';
         };
 
-        // ✨ LED 추천 로직: 4개 결과 도출
         window.updateLedWallRecs = () => {
             const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0, hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
 
-            const wLow = Math.floor(wIn / 320) || 1, wHigh = Math.ceil(wIn / 320) || 1;
-            const hLow = Math.floor(hIn / 160) || 1, hHigh = Math.ceil(hIn / 160) || 1;
-            
             const combinations = [
-                { w: wLow, h: hLow },
-                { w: wLow, h: hHigh },
-                { w: wHigh, h: hLow },
-                { w: wHigh, h: hHigh }
+                { w: Math.floor(wIn / 320) || 1, h: Math.floor(hIn / 160) || 1 },
+                { w: Math.floor(wIn / 320) || 1, h: Math.ceil(hIn / 160) || 1 },
+                { w: Math.ceil(wIn / 320) || 1,  h: Math.floor(hIn / 160) || 1 },
+                { w: Math.ceil(wIn / 320) || 1,  h: Math.ceil(hIn / 160) || 1 }
             ];
 
             combinations.forEach((rec, idx) => {
@@ -425,9 +421,10 @@
                 container.appendChild(div);
             }
             if (toolsVisibility.showLedCalc) {
+                // FIXED BUG HERE: changed `ledDiv` to `div` to ensure rendering correctly
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full relative group';
                 div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button>
-                    <div class="flex items-center gap-2 mb-4 border-b border-gray-50 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 & 16:9 계산기 (320x160)</h3></div>
+                    <div class="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 & 16:9 계산기 (320x160)</h3></div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="flex flex-col gap-4 md:col-span-1">
                             <div class="bg-gray-50 p-3 rounded-xl border border-dashed border-gray-200">
@@ -455,7 +452,7 @@
                             </div>`).join('')}
                         </div>
                     </div>`;
-                container.appendChild(ledDiv);
+                container.appendChild(div);
             }
         };
 
@@ -511,15 +508,15 @@
                 } else { 
                     setDoc(doc(db, ...pathArr, 'config', 'settings'), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: false, showFedEx: false, showLedCalc: false} }); 
                 }
-            }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }));
+            }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }, (err) => {}));
             unsubs.push(onSnapshot(collection(db, ...pathArr, 'mySites'), (snap) => { 
                 mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 mySites.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
                 window.renderMySites(); window.renderMySitesList(); 
-            }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
+            }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }, (err) => {}));
         }
 
         // --- Interaction Handlers ---
