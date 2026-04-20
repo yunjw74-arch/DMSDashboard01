@@ -214,7 +214,6 @@
                 </div>
             </div>
 
-            <!-- 동적 비즈니스 도구 영역 -->
             <div id="business-tools-container" class="mt-6 flex flex-col gap-4"></div>
         </div>
     </div>
@@ -275,9 +274,8 @@
         </div>
     </div>
 
-    <!-- 캘린더 설정 모달 -->
     <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
-        <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-w-md border">
+        <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-md border">
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
             <input type="text" id="calendarSrcInput" placeholder="Google Calendar ID" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
             <div class="flex justify-end gap-2 mt-6">
@@ -286,6 +284,8 @@
             </div>
         </div>
     </div>
+
+    <div id="toast" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white px-6 py-3 rounded-full shadow-2xl z-[3000] text-xs font-bold opacity-0 transition-opacity duration-300"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -313,26 +313,24 @@
         let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
         let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
 
-        const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`; // Strict Path (Rule 1)
+        const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
 
-        // --- GLOBAL FUNCTIONS - DEFINED EARLY FOR RELIABILITY ---
-        const showToast = (msg) => {
+        // --- ATTACH GLOBAL FUNCTIONS TO WINDOW EARLY ---
+        window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
             toast.innerText = msg; toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('opacity-100'), 10);
             setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
         };
-        window.showToast = showToast;
 
-        const requireAuth = () => {
+        window.requireAuth = () => {
             if (!currentUser) {
                 window.showToast('로그인이 필요한 기능입니다.');
                 return false;
             }
             return true;
         };
-        window.requireAuth = requireAuth;
 
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); window.showToast('로그아웃 완료'); } catch (e) {} };
@@ -357,7 +355,7 @@
             } catch (e) {}
         };
 
-        // --- Core Logics & Calculations ---
+        // --- Core Business Logics ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
             const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
@@ -377,19 +375,19 @@
             if (kD) kD.innerText = '≈ ' + Math.round(totalUSD * rate).toLocaleString('ko-KR') + ' 원';
         };
 
-        // ✨ LED 추천 로직: 가로폭 2개 x 세로폭 2개 = 총 4개 추천
         window.updateLedWallRecs = () => {
             const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0, hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
 
-            const wLow = Math.floor(wIn / 320) || 1, wHigh = Math.ceil(wIn / 320) || 1;
-            const hLow = Math.floor(hIn / 160) || 1, hHigh = Math.ceil(hIn / 160) || 1;
+            // 4개 조합 산출 (가로폭 2개 x 세로폭 2개)
+            const cwLow = Math.floor(wIn / 320) || 1, cwHigh = Math.ceil(wIn / 320) || 1;
+            const chLow = Math.floor(hIn / 160) || 1, chHigh = Math.ceil(hIn / 160) || 1;
             
             const combinations = [
-                { w: wLow, h: hLow },
-                { w: wLow, h: hHigh },
-                { w: wHigh, h: hLow },
-                { w: wHigh, h: hHigh }
+                { w: cwLow, h: chLow },
+                { w: cwLow, h: chHigh },
+                { w: cwHigh, h: chLow },
+                { w: cwHigh, h: chHigh }
             ];
 
             combinations.forEach((rec, idx) => {
@@ -405,12 +403,13 @@
 
         window.calculate169Ratio = (type) => {
             const wI = document.getElementById('led-ratio-w'), hI = document.getElementById('led-ratio-h'), diagD = document.getElementById('led-ratio-diag');
+            if (!wI || !hI) return;
             let w = parseFloat(wI.value) || 0, h = parseFloat(hI.value) || 0;
             if (type === 'W' && w > 0) { h = w * (9/16); hI.value = h.toFixed(0); } else if (type === 'H' && h > 0) { w = h * (16/9); wI.value = w.toFixed(0); }
             if (w > 0 && h > 0 && diagD) diagD.innerText = (Math.sqrt(w*w + h*h) / 25.4).toFixed(1) + " inch";
         };
 
-        // --- Render Business Tools (LED Recommender + Integrated Ratio Calc) ---
+        // --- Rendering Logic ---
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
             if (!container) return; container.innerHTML = ''; if (!currentUser) return;
@@ -478,7 +477,7 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { tools: toolsVisibility }, { merge: true });
         };
 
-        // --- Auth & Data Handlers ---
+        // --- Auth Implementation ---
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user && !user.isAnonymous) {
@@ -536,7 +535,7 @@
         window.addStickyNote = async () => { if (!window.requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', crypto.randomUUID()), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
         window.deleteStickyNote = async (id) => { if (!window.requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id)); };
         window.updateStickyNote = async (id, data) => { if (!window.requireAuth()) return; await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id), data); };
-        window.deleteSite = async (id, isMy = false) => { if (!window.requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), isMy ? 'mySites' : 'sites', id)); };
+        window.deleteSite = async (id, isMy = false) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), isMy ? 'mySites' : 'sites', id)); };
         window.addCategory = async () => { if (!window.requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { categories }, { merge: true }); } };
         window.openQuickAddModal = (cat) => { if (!window.requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 사이트 추가`; document.getElementById('siteModal').classList.remove('hidden'); };
         window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
@@ -554,7 +553,7 @@
         window.deleteTodo = async (id) => await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id));
         window.addTodo = async () => { if (!window.requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', crypto.randomUUID()), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
 
-        // --- Sticky & Dashboard Renders ---
+        // --- Renders ---
         window.initStickyDrag = (e, id) => {
             if (e.target.closest('.color-dot') || e.target.closest('button')) return;
             e.preventDefault(); window.getSelection()?.removeAllRanges();
@@ -578,7 +577,7 @@
             stickyNotes.forEach(note => {
                 const el = document.createElement('div'); el.id = `note-${note.id}`; el.className = 'sticky-note pointer-events-auto'; el.style.left = `${note.x}px`; el.style.top = `${note.y}px`; el.style.width = `${note.width || 220}px`; el.style.height = `${note.height || 220}px`; el.style.backgroundColor = note.color || '#fff9c4';
                 const d = new Date(note.createdAt), ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                el.innerHTML = `<div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')"><div class="flex gap-1.5">${['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'].map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div><span class="note-date">${ds}</span><button onclick="window.deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button></div><textarea class="sticky-note-body">${note.text || ''}</textarea>`;
+                el.innerHTML = `<div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')"><div class="flex gap-1.5">${['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'].map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div><span class="note-date">${ds}</span><button onclick="window.deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button></div><textarea class="sticky-note-body" placeholder="메모...">${note.text || ''}</textarea>`;
                 const ta = el.querySelector('textarea'); ta.onblur = () => { if (ta.value !== note.text) window.updateStickyNote(note.id, { text: ta.value }); };
                 el.onmouseup = async () => { if (!activeDragId) { const nw = el.offsetWidth, nh = el.offsetHeight; if (Math.abs(nw - (note.width||220)) > 5 || Math.abs(nh - (note.height||220)) > 5) await window.updateStickyNote(note.id, {width:nw, height:nh}); } };
                 container.appendChild(el);
