@@ -10,12 +10,13 @@
     <style>
         body { background-color: #f8f9fa; position: relative; min-height: 100vh; overflow-x: hidden; }
         .site-card:hover .delete-btn { opacity: 1; }
+        .my-site-item:hover .my-delete-btn { opacity: 1; }
         .category-header:hover .edit-tools { opacity: 1; }
         .font-nanum-ac { font-family: 'NanumSquareAc', sans-serif; }
         .category-section { transition: all 0.2s ease; }
         .site-card { transition: transform 0.2s, background-color 0.2s; z-index: 1; }
         .site-card:hover { z-index: 50; } 
-        .delete-btn { transition: opacity 0.2s; pointer-events: auto; }
+        .delete-btn, .my-delete-btn { transition: opacity 0.2s; pointer-events: auto; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -79,13 +80,13 @@
 </head>
 <body class="px-4 md:px-10 pb-20 font-nanum-ac text-black">
 
+    <!-- 포스트잇 컨테이너 -->
     <div id="sticky-notes-container" class="fixed inset-0 pointer-events-none overflow-visible" style="z-index: 999;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
-        <!-- 상단 고정 영역 (헤더만 고정) -->
+        <!-- 상단 고정 영역 -->
         <div class="sticky top-0 z-40 bg-[#f8f9fa] border-b border-gray-200">
             <header class="pt-4 md:pt-6 pb-2 flex flex-col xl:flex-row items-center justify-between gap-4">
-                <!-- 검색 영역 -->
                 <div class="flex flex-wrap justify-start items-center gap-3 w-full flex-1 ml-2">
                     <form action="https://search.naver.com/search.naver" method="get" target="_blank" class="flex items-center relative flex-1 min-w-[160px] max-w-[330px]" onsubmit="setTimeout(() => this.reset(), 100)">
                         <input type="text" name="query" placeholder="네이버 검색" class="pl-8 pr-3 py-1.5 border border-[#03c75a] rounded-full text-[13px] focus:outline-none focus:ring-2 focus:ring-[#03c75a]/30 w-full bg-gray-50 focus:bg-white transition-colors" autocomplete="off">
@@ -98,13 +99,13 @@
                 </div>
 
                 <div class="flex flex-wrap justify-start xl:justify-end items-center gap-2 w-full xl:w-auto shrink-0 mr-2 ml-2 xl:ml-0">
-                    <form action="https://search.shopping.naver.com/search/all" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[155px]" onsubmit="setTimeout(() => this.reset(), 100)">
+                    <form action="https://search.shopping.naver.com/search/all" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[165px]" onsubmit="setTimeout(() => this.reset(), 100)">
                         <input type="text" name="query" placeholder="네이버 최저가" class="pl-8 pr-3 py-1.5 border border-[#03c75a] rounded-full text-[13px] text-[#03c75a] focus:outline-none focus:ring-2 focus:ring-[#03c75a]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
                         <i class="fas fa-shopping-cart absolute left-3 text-[#03c75a] text-xs"></i>
                     </form>
 
                     <form action="https://www.compuzone.co.kr/search/search.htm" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[165px]" onsubmit="setTimeout(() => this.reset(), 100)">
-                        <input type="text" name="SearchProductKey" placeholder="컴퓨존 검색" class="pl-8 pr-3 py-1.5 border border-[#0a53a8] rounded-full text-[13px] text-[#0a53a8] placeholder-[#0a53a8]/70 focus:outline-none focus:ring-2 focus:ring-[#0a53a8]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
+                        <input type="text" name="SearchProductKey" placeholder="컴퓨존 검색" class="pl-8 pr-3 py-1.5 border border-[#0a53a8] rounded-full text-[13px] text-[#0a53a8] focus:outline-none focus:ring-2 focus:ring-[#0a53a8]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
                         <i class="fas fa-desktop absolute left-3 text-[#0a53a8] text-xs"></i>
                     </form>
 
@@ -150,39 +151,30 @@
                 </div>
             </header>
 
-            <!-- ✨ MY 퀵 바로가기 영역 추가 -->
+            <!-- ✨ 동적인 MY 퀵 메뉴 영역 -->
             <div class="flex items-center px-3 py-2.5 gap-4">
                 <span class="text-[14px] font-black text-blue-600 shrink-0">MY</span>
-                <div class="flex items-center gap-3 overflow-x-auto no-scrollbar">
-                    <a href="https://mail.google.com" target="_blank" title="Gmail" class="w-7 h-7 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow">
-                        <img src="https://www.google.com/s2/favicons?sz=64&domain=mail.google.com" class="w-4 h-4">
-                    </a>
-                    <a href="https://drive.google.com" target="_blank" title="Google Drive" class="w-7 h-7 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow">
-                        <img src="https://www.google.com/s2/favicons?sz=64&domain=drive.google.com" class="w-4 h-4">
-                    </a>
-                    <a href="https://youtube.com" target="_blank" title="Youtube" class="w-7 h-7 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow">
-                        <img src="https://www.google.com/s2/favicons?sz=64&domain=youtube.com" class="w-4 h-4">
-                    </a>
-                    <a href="https://github.com" target="_blank" title="Github" class="w-7 h-7 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow">
-                        <img src="https://www.google.com/s2/favicons?sz=64&domain=github.com" class="w-4 h-4">
-                    </a>
+                <div id="my-sites-container" class="flex items-center gap-3 overflow-x-auto no-scrollbar">
+                    <!-- MY 사이트들이 여기에 렌더링됩니다 -->
+                </div>
+                <div class="flex items-center gap-3 shrink-0 ml-auto mr-2">
                     <div class="w-px h-4 bg-gray-300 mx-1"></div>
                     <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Quick Access</span>
                 </div>
             </div>
         </div>
 
-        <!-- 카테고리 대시보드 (전체 스크롤 영역) -->
+        <!-- 카테고리 대시보드 -->
         <div id="dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mt-6 mb-4"></div>
 
-        <!-- 하단 도구들 -->
+        <!-- 하단 업무 도구 -->
         <div class="mt-5 border-t border-gray-200 pt-8 pb-20">
             <div class="flex flex-col md:flex-row items-center mb-6 gap-4">
                 <div class="flex items-center gap-3 shrink-0">
-                    <a href="https://calendar.google.com/" target="_blank" title="구글 캘린더 열기" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 hover:bg-blue-50 transition-colors">
+                    <a href="https://calendar.google.com/" target="_blank" title="구글 캘린더" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 hover:bg-blue-50 transition-colors">
                         <i class="fas fa-calendar-alt text-blue-500"></i>
                     </a>
-                    <button type="button" onclick="openCalendarSettings()" class="text-lg font-bold text-gray-800 hover:text-blue-600 transition-colors">업무 일정</button>
+                    <button type="button" onclick="openCalendarSettings()" class="text-lg font-bold text-gray-800">업무 일정</button>
                     <div id="exchange-rate-display" class="ml-4 flex items-center gap-2"></div>
                 </div>
                 <div class="ml-auto">
@@ -204,7 +196,7 @@
                         </div>
                         <div class="p-2.5 border-b border-gray-100">
                             <div class="flex gap-2">
-                                <input type="text" id="todoInput" placeholder="할일 입력..." class="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <input type="text" id="todoInput" placeholder="할일 입력..." class="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none">
                                 <button id="addTodoBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">추가</button>
                             </div>
                         </div>
@@ -216,7 +208,7 @@
             </div>
 
             <div class="mt-6 flex flex-col gap-4">
-                <!-- 수입 원가 계산기 (2단계 로직 적용) -->
+                <!-- 원가 계산기 -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max">
                     <div class="flex flex-wrap items-center justify-start gap-4">
                         <div class="flex flex-col">
@@ -231,20 +223,19 @@
                         <span class="text-gray-400 mt-3 font-bold">×</span>
                         <div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div>
                         <span class="text-gray-400 mt-3 font-bold">=</span>
-                        <div class="flex flex-col">
-                            <label class="text-[9px] text-blue-500 mb-0.5 ml-1 font-bold uppercase">Total USD</label>
-                            <div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px] text-right">$ 0.00</div>
+                        <div class="flex flex-col text-center">
+                            <label class="text-[9px] text-blue-500 mb-0.5 font-bold uppercase">Total USD</label>
+                            <div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px]">$ 0.00</div>
                         </div>
                         <span class="text-gray-400 mt-3 font-bold">×</span>
                         <div class="flex flex-col">
-                            <label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold uppercase">Exchange Rate</label>
+                            <label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold uppercase">Rate</label>
                             <input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="calculateTotal()">
                         </div>
                         <span class="text-gray-400 mt-3 font-bold">=</span>
                         <div class="flex items-center gap-2">
                             <div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div>
-                            <!-- 네이버 환율 바로가기 -->
-                            <a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" title="네이버 환율 상세" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
+                            <a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm">
                                 <span class="text-[#03c75a] font-black text-[15px]">N</span>
                             </a>
                         </div>
@@ -282,8 +273,8 @@
             <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">정보 추가</h3>
             <input type="hidden" id="modalCategory">
             <div class="space-y-4">
-                <input type="text" id="siteName" placeholder="이름" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
-                <input type="text" id="siteUrl" placeholder="URL" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
+                <input type="text" id="siteName" placeholder="이름 (예: Gmail)" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
+                <input type="text" id="siteUrl" placeholder="URL (예: mail.google.com)" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
             </div>
             <div class="flex justify-end gap-2 mt-8">
                 <button onclick="closeModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
@@ -305,7 +296,7 @@
 
     <div id="editTodoModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border">
-            <h3 class="text-base font-bold text-gray-800 mb-4">내용 수정</h3>
+            <h3 class="text-base font-bold text-gray-800 mb-4">할일 수정</h3>
             <textarea id="editTodoInput" rows="5" class="w-full p-3 border rounded-lg bg-gray-50 text-sm outline-none"></textarea>
             <div class="flex justify-end gap-2 mt-6">
                 <button onclick="closeEditTodoModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
@@ -335,14 +326,16 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        let sites = []; let categories = []; let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
-        let todos = []; let stickyNotes = []; let currentUser = null; let currentEditTodoIndex = -1; let unsubs = [];
+        let sites = []; let categories = []; let mySites = [];
+        let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
+        let todos = []; let stickyNotes = []; let currentUser = null; let unsubs = [];
 
         const getUserRoot = (uid) => `artifacts/${appId}/users/${uid}`;
-        const getStickyCol = (uid) => collection(db, getUserRoot(uid), 'stickyNotes');
-        const getConfigDoc = (uid) => doc(db, getUserRoot(uid), 'config', 'settings');
+        const getMySitesCol = (uid) => collection(db, getUserRoot(uid), 'mySites');
         const getSitesCol = (uid) => collection(db, getUserRoot(uid), 'sites');
         const getTodosCol = (uid) => collection(db, getUserRoot(uid), 'todos');
+        const getStickyCol = (uid) => collection(db, getUserRoot(uid), 'stickyNotes');
+        const getConfigDoc = (uid) => doc(db, getUserRoot(uid), 'config', 'settings');
 
         // --- Utils ---
         window.updateCalendarIframe = () => {
@@ -362,21 +355,7 @@
 
         const requireAuth = () => { if (!currentUser) { showToast('로그인이 필요한 기능입니다.'); return false; } return true; };
 
-        // --- Sticky Notes ---
-        window.addStickyNote = async () => {
-            if (!requireAuth()) return;
-            const newNoteRef = doc(getStickyCol(currentUser.uid));
-            await setDoc(newNoteRef, {
-                text: '',
-                x: 100, y: 150,
-                width: 220, height: 220,
-                color: '#fff9c4',
-                createdAt: Date.now()
-            });
-        };
-        window.deleteStickyNote = async (id) => { if (!requireAuth()) return; await deleteDoc(doc(getStickyCol(currentUser.uid), id)); };
-        window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(currentUser.uid), id), data); };
-
+        // --- Sticky Notes & Dragging ---
         let activeDragId = null;
         let dragStartPos = { x: 0, y: 0 };
         let noteStartPos = { x: 0, y: 0 };
@@ -402,47 +381,11 @@
 
         async function handleStickyMouseUp() {
             if (!activeDragId) return;
-            const noteEl = document.getElementById(`note-${activeDragId}`);
-            const fx = parseFloat(noteEl.style.left);
-            const fy = parseFloat(noteEl.style.top);
-            const id = activeDragId;
-            activeDragId = null;
+            const finalPos = { x: parseFloat(document.getElementById(`note-${activeDragId}`).style.left), y: parseFloat(document.getElementById(`note-${activeDragId}`).style.top) };
+            const id = activeDragId; activeDragId = null;
             document.removeEventListener('mousemove', handleStickyMouseMove);
             document.removeEventListener('mouseup', handleStickyMouseUp);
-            await window.updateStickyNote(id, { x: fx, y: fy });
-        }
-
-        function renderStickyNotes() {
-            const container = document.getElementById('sticky-notes-container');
-            container.innerHTML = '';
-            const noteColors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
-            stickyNotes.forEach(note => {
-                const el = document.createElement('div');
-                el.id = `note-${note.id}`;
-                el.className = 'sticky-note pointer-events-auto';
-                el.style.left = `${note.x}px`;
-                el.style.top = `${note.y}px`;
-                el.style.width = `${note.width || 220}px`;
-                el.style.height = `${note.height || 220}px`;
-                el.style.backgroundColor = note.color || '#fff9c4';
-                const date = new Date(note.createdAt);
-                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                el.innerHTML = `
-                    <div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')">
-                        <div class="flex gap-1.5">${noteColors.map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div>
-                        <span class="note-date">${dateStr}</span>
-                        <button onclick="deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button>
-                    </div>
-                    <textarea class="sticky-note-body" placeholder="메모...">${note.text || ''}</textarea>`;
-                const textarea = el.querySelector('textarea');
-                textarea.addEventListener('blur', () => { if (textarea.value !== note.text) window.updateStickyNote(note.id, { text: textarea.value }); });
-                el.addEventListener('mouseup', async () => {
-                    if (activeDragId) return;
-                    const nw = el.offsetWidth; const nh = el.offsetHeight;
-                    if (Math.abs(nw - (note.width || 220)) > 5 || Math.abs(nh - (note.height || 220)) > 5) await window.updateStickyNote(note.id, { width: nw, height: nh });
-                });
-                container.appendChild(el);
-            });
+            await updateDoc(doc(getStickyCol(currentUser.uid), id), finalPos);
         }
 
         // --- Business Logic ---
@@ -457,7 +400,7 @@
             const totalUSD = chargeWt * 12.5 * 1.28;
             document.getElementById('fedex-dim-wt-display').innerText = dimWt.toFixed(2) + ' kg';
             document.getElementById('fedex-charge-wt').innerText = chargeWt.toFixed(2) + ' kg';
-            document.getElementById('fedex-usd').innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('fedex-usd').innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('fedex-krw').innerText = '≈ ' + Math.round(totalUSD * rate).toLocaleString('ko-KR') + ' 원';
         };
 
@@ -466,9 +409,8 @@
             const s = parseFloat(document.getElementById('calc-shipping').value) || 0;
             const r = parseFloat(document.getElementById('calc-rate-input').value) || 0;
             const totalUSD = (p + s) * 1.08;
-            const totalKRW = totalUSD * r;
             document.getElementById('calc-total-usd').innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('calc-total-display').innerText = Math.round(totalKRW).toLocaleString('ko-KR') + ' 원';
+            document.getElementById('calc-total-display').innerText = Math.round(totalUSD * r).toLocaleString('ko-KR') + ' 원';
             window.calculateFedEx();
         };
 
@@ -486,25 +428,56 @@
             } catch (e) {}
         };
 
-        // --- Core Auth & Data ---
+        // --- Core Site Management (Categorized + MY) ---
+        window.openQuickAddModal = (cat) => {
+            if (!requireAuth()) return;
+            document.getElementById('modalCategory').value = cat;
+            document.getElementById('modalTitle').innerText = (cat === 'MY_SECTION') ? '나만의 퀵 메뉴 추가' : `'${cat}' 사이트 추가`;
+            document.getElementById('siteName').value = ""; document.getElementById('siteUrl').value = "";
+            document.getElementById('siteModal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
+
+        window.submitSite = async () => {
+            if (!requireAuth()) return;
+            const n = document.getElementById('siteName').value.trim();
+            let u = document.getElementById('siteUrl').value.trim();
+            const cat = document.getElementById('modalCategory').value;
+            if (!n || !u) return;
+            if (!u.startsWith('http')) u = 'https://' + u;
+
+            if (cat === 'MY_SECTION') {
+                await setDoc(doc(getMySitesCol(currentUser.uid)), { name: n, url: u, createdAt: Date.now() });
+            } else {
+                await setDoc(doc(getSitesCol(currentUser.uid)), { name: n, url: u, category: cat, createdAt: Date.now() });
+            }
+            closeModal();
+            showToast('추가되었습니다.');
+        };
+
+        window.deleteSite = async (id, isMy = false) => {
+            if (!requireAuth()) return;
+            if (confirm('삭제하시겠습니까?')) {
+                const col = isMy ? getMySitesCol(currentUser.uid) : getSitesCol(currentUser.uid);
+                await deleteDoc(doc(col, id));
+            }
+        };
+
+        // --- Auth & Initializers ---
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
-            const loginBtn = document.getElementById('login-btn');
-            const profileArea = document.getElementById('user-profile-area');
             if (user && !user.isAnonymous) {
-                loginBtn.classList.add('hidden'); profileArea.classList.remove('hidden');
+                document.getElementById('login-btn').classList.add('hidden');
+                document.getElementById('user-profile-area').classList.remove('hidden');
                 document.getElementById('user-display-name').innerText = user.displayName || user.email.split('@')[0];
-                if (user.photoURL) { 
-                    const img = document.getElementById('user-avatar');
-                    img.src = user.photoURL; img.classList.remove('hidden'); 
-                    document.getElementById('user-avatar-fallback').classList.add('hidden');
-                }
+                if (user.photoURL) { const img = document.getElementById('user-avatar'); img.src = user.photoURL; img.classList.remove('hidden'); }
                 startListeners(user.uid);
-                showToast(`환영합니다, ${user.displayName || '사용자'}님!`);
             } else {
-                loginBtn.classList.remove('hidden'); profileArea.classList.add('hidden');
+                document.getElementById('login-btn').classList.remove('hidden');
+                document.getElementById('user-profile-area').classList.add('hidden');
                 unsubs.forEach(u => u()); unsubs = [];
-                categories = ['기본 카테고리']; sites = []; stickyNotes = []; render(); renderTodos(); renderStickyNotes(); window.updateCalendarIframe();
+                categories = []; sites = []; mySites = []; stickyNotes = []; render(); renderStickyNotes(); renderTodos(); window.updateCalendarIframe();
             }
         });
 
@@ -521,23 +494,56 @@
                 }
             }));
             unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); render(); }));
+            unsubs.push(onSnapshot(getMySitesCol(uid), (snap) => { mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMySites(); }));
             unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); renderTodos(); }));
             unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderStickyNotes(); }));
         }
 
-        // --- Category Drag & Drop ---
-        let dragCatIdx = -1;
-        window.handleDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragCatIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/category', 'true'); };
-        window.handleDragEnd = (e) => { e.target.classList.remove('opacity-40'); };
-        window.handleDrop = async (e, dropIdx) => {
-            e.preventDefault(); if (!e.dataTransfer.types.includes('application/category')) return;
-            if(dragCatIdx !== dropIdx && dragCatIdx !== -1 && currentUser) {
-                const moved = categories.splice(dragCatIdx, 1)[0]; categories.splice(dropIdx, 0, moved);
-                await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true });
-            }
-        };
+        // --- Rendering Functions ---
+        function renderMySites() {
+            const container = document.getElementById('my-sites-container');
+            if (!container) return;
+            const html = mySites.map(s => `
+                <div class="my-site-item relative group shrink-0">
+                    <a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow">
+                        <img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5">
+                    </a>
+                    <button onclick="window.deleteSite('${s.id}', true)" class="my-delete-btn opacity-0 absolute -top-1 -right-1 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[8px] flex items-center justify-center"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html + `
+                <button onclick="window.openQuickAddModal('MY_SECTION')" class="w-8 h-8 rounded-full border border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-all">
+                    <i class="fas fa-plus text-xs"></i>
+                </button>`;
+        }
 
-        // --- Render ---
+        function renderStickyNotes() {
+            const container = document.getElementById('sticky-notes-container');
+            container.innerHTML = '';
+            const noteColors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
+            stickyNotes.forEach(note => {
+                const el = document.createElement('div');
+                el.id = `note-${note.id}`;
+                el.className = 'sticky-note pointer-events-auto';
+                el.style.left = `${note.x}px`; el.style.top = `${note.y}px`;
+                el.style.width = `${note.width || 220}px`; el.style.height = `${note.height || 220}px`;
+                el.style.backgroundColor = note.color || '#fff9c4';
+                const d = new Date(note.createdAt);
+                el.innerHTML = `
+                    <div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')">
+                        <div class="flex gap-1.5">${noteColors.map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div>
+                        <span class="note-date">${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}</span>
+                        <button onclick="window.deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button>
+                    </div>
+                    <textarea class="sticky-note-body">${note.text || ''}</textarea>`;
+                const ta = el.querySelector('textarea');
+                ta.onblur = () => { if (ta.value !== note.text) window.updateStickyNote(note.id, { text: ta.value }); };
+                el.onmouseup = () => { if (!activeDragId) { const nw = el.offsetWidth, nh = el.offsetHeight; if (Math.abs(nw - (note.width||220)) > 5 || Math.abs(nh - (note.height||220)) > 5) window.updateStickyNote(note.id, {width:nw, height:nh}); } };
+                container.appendChild(el);
+            });
+        }
+
         function render() {
             const m = document.getElementById('dashboard');
             m.innerHTML = ''; if (!categories.length) return;
@@ -545,42 +551,47 @@
                 const sec = document.createElement('div');
                 sec.className = 'category-section bg-white border border-gray-200 border-b-[4px] border-b-gray-300 shadow-md px-5 py-2.5 rounded-2xl flex flex-col h-full';
                 sec.draggable = !!currentUser;
-                sec.addEventListener('dragstart', (e) => window.handleDragStart(e, i));
-                sec.addEventListener('dragend', window.handleDragEnd);
+                sec.addEventListener('dragstart', (e) => { dragIdx = i; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/category', 'true'); });
+                sec.addEventListener('dragend', (e) => e.target.classList.remove('opacity-40'));
                 sec.addEventListener('dragover', (e) => e.preventDefault());
-                sec.addEventListener('drop', (e) => window.handleDrop(e, i));
-                const cs = sites.filter(s => s.category === cat).sort((a,b) => (a.order || 0) - (b.order || 0));
-                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><button onclick="deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center hover:bg-red-600 shadow-sm z-10 transition-opacity"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
-                sec.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2><div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-auto"><button onclick="renameCategory('${cat}')" class="text-gray-400 hover:text-blue-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-pen text-[9px]"></i></button><button onclick="deleteCategory('${cat}')" class="text-gray-400 hover:text-red-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-trash text-[9px]"></i></button></div></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sh}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
+                sec.addEventListener('drop', async (e) => {
+                    e.preventDefault(); if (!e.dataTransfer.types.includes('application/category') || dragIdx === i) return;
+                    const moved = categories.splice(dragIdx, 1)[0]; categories.splice(i, 0, moved);
+                    await setDoc(getConfigDoc(currentUser.uid), { categories }, { merge: true });
+                });
+                const cs = sites.filter(s => s.category === cat).sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><button onclick="window.deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center z-10"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
+                sec.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2><div class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 ml-auto"><button onclick="window.renameCategory('${cat}')" class="text-gray-400 hover:text-blue-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-pen text-[9px]"></i></button><button onclick="window.deleteCategory('${cat}')" class="text-gray-400 hover:text-red-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-trash text-[9px]"></i></button></div></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sh}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="window.openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
                 m.appendChild(sec);
             });
         }
 
-        window.addTodo = async () => { if (!requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(); const p = `[${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
-        window.toggleTodo = async (id, done) => { if (!requireAuth()) return; await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !done }); };
-        window.deleteTodo = async (id) => { if (!requireAuth()) return; await deleteDoc(doc(getTodosCol(currentUser.uid), id)); };
         function renderTodos() {
             const l = document.getElementById('todoList'); if (!l) return;
             document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
-            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map((t, i) => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1">${t.text}</span></div><div class="opacity-0 group-hover:opacity-100 flex gap-1"><button onclick="deleteTodo('${t.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-[9px]"></i></button></div></li>`).join('');
+            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         }
 
-        window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
+        // --- Globals ---
+        window.addTodo = async () => { const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
+        window.toggleTodo = async (id, d) => await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !d });
+        window.deleteTodo = async (id) => await deleteDoc(doc(getTodosCol(currentUser.uid), id));
         window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
-        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); closeCalendarModal(); showToast('저장완료'); } };
-        window.openQuickAddModal = (c) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = c; document.getElementById('siteModal').classList.remove('hidden'); };
-        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
-        window.submitSite = async () => { if (!requireAuth()) return; const n = document.getElementById('siteName').value.trim(); let u = document.getElementById('siteUrl').value.trim(); const c = document.getElementById('modalCategory').value; if (!n || !u) return; if (!u.startsWith('http')) u = 'https://' + u; await setDoc(doc(getSitesCol(currentUser.uid)), { name: n, url: u, category: c, createdAt: Date.now(), order: sites.filter(s => s.category === c).length + 1 }); closeModal(); };
-        window.deleteSite = async (id) => { if (!requireAuth()) return; if (confirm('삭제?')) await deleteDoc(doc(getSitesCol(currentUser.uid), id)); };
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { showToast('로그인 실패'); } };
-        window.logout = async () => { try { await signOut(auth); showToast('로그아웃 완료'); } catch (e) {} };
+        window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
+        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); window.closeCalendarModal(); showToast('저장완료'); } };
+        window.closeEditTodoModal = () => document.getElementById('editTodoModal').classList.add('hidden');
+        window.saveEditTodo = async () => { /* ... */ };
 
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
-        document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
+        document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
+
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { showToast('로그인 실패'); } };
+        window.logout = async () => { try { await signOut(auth); showToast('로그아웃 완료'); } catch (e) {} };
 
         window.fetchExchangeRate(); setInterval(window.fetchExchangeRate, 60000);
+        let dragIdx = -1;
     </script>
 </body>
 </html>
