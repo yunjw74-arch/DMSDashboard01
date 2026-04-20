@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Dashboard (Google Auth)</title>
+    <title>Website Dashboard (AI Enhanced)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://hangeul.pstatic.net/hangeul_static/css/nanum-square-ac.css" rel="stylesheet">
@@ -41,7 +41,7 @@
                     </form>
                 </div>
 
-                <!-- 우측 아이콘 및 프로필 영역 -->
+                <!-- 우측 메뉴 및 프로필 -->
                 <div class="flex flex-wrap justify-start xl:justify-end items-center gap-2 w-full xl:w-auto shrink-0 mr-2 ml-2 xl:ml-0">
                     <form action="https://search.shopping.naver.com/search/all" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[165px]" onsubmit="setTimeout(() => this.reset(), 100)">
                         <input type="text" name="query" placeholder="네이버 최저가 검색" class="pl-8 pr-3 py-1.5 border border-[#03c75a] rounded-full text-[13px] text-[#03c75a] placeholder-[#03c75a]/70 focus:outline-none focus:ring-2 focus:ring-[#03c75a]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
@@ -96,15 +96,15 @@
             </header>
 
             <div id="sticky-dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mb-2">
-                <!-- 고정 카테고리 영역 -->
+                <!-- 상단 고정 카테고리 -->
             </div>
         </div>
 
         <div id="dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mt-2">
-            <!-- 일반 카테고리 영역 -->
+            <!-- 일반 카테고리 -->
         </div>
 
-        <!-- 하단 섹션 -->
+        <!-- 하단 업무 도구 섹션 -->
         <div class="mt-5 border-t border-gray-200 pt-8 pb-20">
             <div class="w-full flex flex-col md:flex-row items-center mb-6 gap-4">
                 <div class="flex items-center gap-3 shrink-0">
@@ -148,9 +148,9 @@
                 </div>
             </div>
 
-            <!-- 하단 도구 모음 영역 -->
+            <!-- 하단 계산기 및 도구 -->
             <div class="mt-6 flex flex-col gap-4">
-                <!-- 1. 수입 원가 계산기 -->
+                <!-- 원가 계산기 -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 overflow-x-auto w-full xl:w-max">
                     <div class="flex flex-wrap items-center justify-start gap-2 md:gap-4 w-max mx-auto xl:mx-0">
                         <div class="flex flex-col">
@@ -242,7 +242,7 @@
                     </div>
                 </div>
 
-                <!-- 3. AI 기반 2분할 번역 퀵 툴 (로직 및 UI 수정 버전) -->
+                <!-- AI 스마트 번역 (2분할 뷰) -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 w-full">
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center gap-2">
@@ -257,12 +257,10 @@
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- 원문 (10줄 고정) -->
                         <div class="flex flex-col gap-1">
                             <label class="text-[9px] font-bold text-gray-400 ml-1 uppercase">Original (원문)</label>
                             <textarea id="trans-input-area" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all h-[260px] overflow-y-auto" placeholder="번역할 내용을 입력하세요..."></textarea>
                         </div>
-                        <!-- 번역본 (10줄 고정) -->
                         <div class="flex flex-col gap-1">
                             <label class="text-[9px] font-bold text-blue-500 ml-1 uppercase">Translation (번역본)</label>
                             <div id="trans-output-area" class="w-full px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-xs font-bold text-blue-800 h-[260px] overflow-y-auto break-words whitespace-pre-wrap">번역 결과가 여기에 표시됩니다.</div>
@@ -271,7 +269,7 @@
                     
                     <div class="mt-2 flex justify-end">
                         <a href="https://translate.google.com" target="_blank" class="text-[9px] text-gray-400 hover:text-blue-500 flex items-center gap-1 font-bold">
-                            Google 번역 상세 페이지로 가기 <i class="fas fa-external-link-alt text-[8px]"></i>
+                            Google 번역 상세 페이지 <i class="fas fa-external-link-alt text-[8px]"></i>
                         </a>
                     </div>
                 </div>
@@ -324,6 +322,7 @@
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // --- Firebase Initialization ---
         const firebaseConfig = {
             apiKey: "AIzaSyCAI9RHb4fuk8RmvlhcRtQjqzm_wKbG42k",
             authDomain: "webdashboard-d9db7.firebaseapp.com",
@@ -346,16 +345,16 @@
         const getSitesCol = (uid) => collection(db, getUserRoot(uid), 'sites');
         const getTodosCol = (uid) => collection(db, getUserRoot(uid), 'todos');
 
-        // --- AI API Core (Gemini API Fix) ---
+        // --- Gemini AI Core Logic (Environment Optimized) ---
         window.callGeminiAPI = async (prompt) => {
             const apiKey = ""; // API Key injected at runtime
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
-            const systemPrompt = "당신은 비즈니스 번역 전문가입니다. 입력된 텍스트의 언어를 감지하여 한국어면 영어로, 그 외 언어는 한국어로 번역하십시오. 비즈니스 환경에 적합한 격식 있는 문체를 사용하고, 설명 없이 번역 결과만 출력하십시오.";
+            const systemMsg = "당신은 비즈니스 및 물류 전문 번역가입니다. 입력된 텍스트의 언어를 감지하여 한국어면 영어로, 그 외 모든 언어는 한국어로 자연스럽고 정중하게 번역하십시오. 번역 결과만 텍스트로 출력하세요.";
             
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
+                systemInstruction: { parts: [{ text: systemMsg }] }
             };
 
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -367,15 +366,18 @@
                         body: JSON.stringify(payload) 
                     });
                     
-                    if (!res.ok) throw new Error(`API_ERROR_${res.status}`);
+                    if (!res.ok) throw new Error(`API_FAIL_${res.status}`);
                     
                     const data = await res.json();
-                    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!resultText) throw new Error("EMPTY_RESPONSE");
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) throw new Error("EMPTY_DATA");
                     
-                    return resultText;
+                    return text;
                 } catch (e) {
-                    if (i === 4) return null;
+                    if (i === 4) {
+                        console.error("Gemini Error:", e);
+                        return null;
+                    }
                     await new Promise(r => setTimeout(r, delays[i]));
                 }
             }
@@ -387,12 +389,12 @@
             const btn = document.getElementById('trans-btn');
             const text = input.value.trim();
 
-            if (!text) return window.showToast("번역할 내용을 입력해주세요.");
+            if (!text) return window.showToast("번역할 텍스트를 입력해주세요.");
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
-            output.innerText = "AI 번역 엔진 가동 중...";
-            output.style.opacity = "0.6";
+            output.innerText = "AI가 문장을 번역하는 중입니다...";
+            output.style.opacity = "0.5";
 
             const result = await window.callGeminiAPI(text);
 
@@ -403,10 +405,11 @@
             if (result) {
                 output.innerText = result.trim();
             } else {
-                output.innerText = "번역 엔진 응답 지연이 발생했습니다. 잠시 후 [번역하기]를 다시 클릭해 주세요.";
+                output.innerText = "번역 엔진과의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.";
             }
         };
 
+        // --- Utils & State Management ---
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             toast.innerText = msg; toast.classList.remove('hidden');
@@ -422,17 +425,7 @@
             }
         };
 
-        const requireAuth = () => { if (!currentUser) { showToast('회원 로그인이 필요한 기능입니다.'); return false; } return true; };
-
-        const loadDemoData = () => {
-            categories = ['기본 카테고리', '도구 모음'];
-            sites = [{ id: 'demo1', name: '네이버', url: 'https://naver.com', category: '기본 카테고리' }, { id: 'demo2', name: '유튜브', url: 'https://youtube.com', category: '기본 카테고리' }];
-            todos = [{ id: 't1', text: '[안내] 우측 상단의 [구글 로그인] 버튼을 눌러 회원가입을 진행해주세요.', done: false, createdAt: 1 }];
-            render(); renderTodos(); updateCalendarIframe();
-        };
-
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (error) { showToast('로그인 처리 중 오류가 발생했습니다.'); } };
-        window.logout = async () => { try { await signOut(auth); showToast('로그아웃 되었습니다.'); } catch (error) {} };
+        const requireAuth = () => { if (!currentUser) { showToast('로그인이 필요한 기능입니다.'); return false; } return true; };
 
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
@@ -450,7 +443,8 @@
                 startListeners(user.uid); showToast(`환영합니다, ${displayNameElem.innerText}님!`);
             } else {
                 loginBtn.classList.remove('hidden'); profileArea.classList.add('hidden');
-                unsubs.forEach(u => u()); unsubs = []; loadDemoData();
+                unsubs.forEach(u => u()); unsubs = [];
+                categories = ['기본 카테고리']; sites = []; render(); renderTodos(); updateCalendarIframe();
             }
         });
 
@@ -463,14 +457,14 @@
                     if (data.calendarId) { calendarId = data.calendarId; updateCalendarIframe(); }
                     render();
                 } else {
-                    setDoc(getConfigDoc(uid), { categories: ['기본 그룹', '업무용'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com" });
+                    setDoc(getConfigDoc(uid), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com" });
                 }
             }));
             unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); render(); }));
-            unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); renderTodos(); }));
+            unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); renderTodos(); }));
         }
 
-        // --- Drag & Drop for Categories (이동 기능) ---
+        // --- Drag & Drop ---
         let dragIdx = -1;
         window.handleDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/category', 'true'); };
         window.handleDragEnd = (e) => { e.target.classList.remove('opacity-40'); };
@@ -484,6 +478,7 @@
             }
         };
 
+        // --- FedEx & Cost Logics ---
         window.calculateFedEx = () => {
             const L = parseFloat(document.getElementById('fedex-l').value) || 0;
             const W = parseFloat(document.getElementById('fedex-w').value) || 0;
@@ -508,7 +503,7 @@
             window.calculateFedEx();
         };
 
-        window.fetchExchangeRate = async (isManual = false) => {
+        window.fetchExchangeRate = async () => {
             try {
                 const res = await fetch('https://api.manana.kr/exchange/rate.json');
                 const data = await res.json();
@@ -516,23 +511,24 @@
                 if (usdData) {
                     const sendRate = usdData.rate + 9.8;
                     const displayElement = document.getElementById('exchange-rate-display');
-                    displayElement.innerHTML = `<a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="flex items-center gap-2 text-[12px] font-bold text-gray-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm transition-all hover:bg-green-100"><span class="flex items-center justify-center w-5 h-5 bg-white rounded-full text-green-600 shadow-sm"><i class="fas fa-dollar-sign text-[10px]"></i></span><span>1 USD = <span class="text-red-500">${sendRate.toLocaleString('ko-KR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span> 원</span></a>`;
+                    displayElement.innerHTML = `<a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="flex items-center gap-2 text-[12px] font-bold text-gray-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm transition-all hover:bg-green-100"><span>1 USD = <span class="text-red-500">${sendRate.toLocaleString('ko-KR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span> 원</span></a>`;
                     const calcRateInput = document.getElementById('calc-rate-input');
                     if (calcRateInput) { calcRateInput.value = sendRate.toFixed(2); window.calculateTotal(); }
                 }
             } catch (e) {}
         };
 
+        // --- CRUD ---
         window.addCategory = async () => { if (!requireAuth()) return; const name = prompt('새 카테고리 이름을 입력하세요:'); if (name && name.trim()) { categories.push(name.trim()); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); } };
-        window.renameCategory = async (oldName) => { if (!requireAuth()) return; const newName = prompt(`'${oldName}' 카테고리 이름 변경:`, oldName); if (newName && newName.trim() && newName.trim() !== oldName) { const idx = categories.indexOf(oldName); if (idx !== -1) { categories[idx] = newName.trim(); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); const batchPromises = sites.filter(s => s.category === oldName).map(s => updateDoc(doc(getSitesCol(currentUser.uid), s.id), { category: newName.trim() })); await Promise.all(batchPromises); } } };
-        window.deleteCategory = async (catName) => { if (!requireAuth()) return; if (confirm(`'${catName}' 카테고리를 삭제하시겠습니까?`)) { const newCats = categories.filter(c => c !== catName); await setDoc(getConfigDoc(currentUser.uid), { categories: newCats, calendarId }, { merge: true }); const deletions = sites.filter(s => s.category === catName).map(s => deleteDoc(doc(getSitesCol(currentUser.uid), s.id))); await Promise.all(deletions); } };
-        window.submitSite = async () => { if (!requireAuth()) { closeModal(); return; } const name = document.getElementById('siteName').value.trim(); let url = document.getElementById('siteUrl').value.trim(); const cat = document.getElementById('modalCategory').value; if (!name || !url) return showToast('이름과 URL을 입력해주세요.'); if (!url.startsWith('http')) url = 'https://' + url; const maxOrder = sites.filter(s => s.category === cat).length; await setDoc(doc(getSitesCol(currentUser.uid)), { name, url, category: cat, createdAt: Date.now(), order: maxOrder + 1 }); closeModal(); showToast('추가되었습니다.'); };
+        window.renameCategory = async (oldName) => { if (!requireAuth()) return; const newName = prompt(`'${oldName}' 이름 변경:`, oldName); if (newName && newName.trim() !== oldName) { const idx = categories.indexOf(oldName); categories[idx] = newName.trim(); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); const batch = sites.filter(s => s.category === oldName).map(s => updateDoc(doc(getSitesCol(currentUser.uid), s.id), { category: newName.trim() })); await Promise.all(batch); } };
+        window.deleteCategory = async (name) => { if (!requireAuth()) return; if (confirm(`'${name}' 삭제하시겠습니까?`)) { const newCats = categories.filter(c => c !== name); await setDoc(getConfigDoc(currentUser.uid), { categories: newCats, calendarId }, { merge: true }); const del = sites.filter(s => s.category === name).map(s => deleteDoc(doc(getSitesCol(currentUser.uid), s.id))); await Promise.all(del); } };
+        window.submitSite = async () => { if (!requireAuth()) { closeModal(); return; } const name = document.getElementById('siteName').value.trim(); let url = document.getElementById('siteUrl').value.trim(); const cat = document.getElementById('modalCategory').value; if (!name || !url) return; if (!url.startsWith('http')) url = 'https://' + url; await setDoc(doc(getSitesCol(currentUser.uid)), { name, url, category: cat, createdAt: Date.now(), order: sites.filter(s => s.category === cat).length + 1 }); closeModal(); showToast('추가되었습니다.'); };
         window.deleteSite = async (docId) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) { await deleteDoc(doc(getSitesCol(currentUser.uid), docId)); showToast('삭제되었습니다.'); } };
         
         function render() {
-            const stickyDashboard = document.getElementById('sticky-dashboard');
-            const mainDashboard = document.getElementById('dashboard');
-            stickyDashboard.innerHTML = ''; mainDashboard.innerHTML = '';
+            const sticky = document.getElementById('sticky-dashboard');
+            const main = document.getElementById('dashboard');
+            sticky.innerHTML = ''; main.innerHTML = '';
             if (!categories || categories.length === 0) return;
 
             categories.forEach((cat, cIdx) => {
@@ -543,10 +539,13 @@
                 section.addEventListener('dragend', window.handleDragEnd);
                 section.addEventListener('dragover', (e) => e.preventDefault());
                 section.addEventListener('drop', (e) => window.handleDrop(e, cIdx));
-                const catSites = sites.filter(s => s.category === cat).sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                const catSites = sites.filter(s => s.category === cat).sort((a,b) => (a.order || 0) - (b.order || 0));
                 const sitesHtml = catSites.map(site => `<div class="site-card relative flex flex-col items-center group p-1 cursor-grab transition-all"><button onclick="deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center hover:bg-red-600 shadow-sm z-10 transition-opacity"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
+                
                 section.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2><div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-auto"><button onclick="renameCategory('${cat}')" class="text-gray-400 hover:text-blue-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-pen text-[9px]"></i></button><button onclick="deleteCategory('${cat}')" class="text-gray-400 hover:text-red-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-trash text-[9px]"></i></button></div></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sitesHtml}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
-                if (cIdx < 2) { stickyDashboard.appendChild(section); } else { mainDashboard.appendChild(section); }
+                
+                if (cIdx < 2) { sticky.appendChild(section); } else { main.appendChild(section); }
             });
         }
 
@@ -559,17 +558,19 @@
             list.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일이 없습니다.</li>' : todos.map((t, i) => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 overflow-hidden cursor-pointer flex-1" onclick="toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 shrink-0 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] break-words whitespace-pre-wrap ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-normal">${t.text}</span></div><div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 ml-1"><button onclick="editTodo(${i})" class="text-gray-400 hover:text-blue-500 p-1"><i class="fas fa-pen text-[9px]"></i></button><button onclick="deleteTodo('${t.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></div></li>`).join('');
         }
 
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { showToast('로그인 처리 중 오류 발생'); } };
+        window.logout = async () => { try { await signOut(auth); showToast('로그아웃 완료'); } catch (e) {} };
         window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
-        window.openQuickAddModal = (cat) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 바로가기 추가`; document.getElementById('siteName').value = ""; document.getElementById('siteUrl').value = ""; document.getElementById('siteModal').classList.remove('hidden'); };
+        window.openQuickAddModal = (cat) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 추가`; document.getElementById('siteName').value = ""; document.getElementById('siteUrl').value = ""; document.getElementById('siteModal').classList.remove('hidden'); };
         window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
         window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
         window.editTodo = (idx) => { if (!requireAuth()) return; currentEditTodoIndex = idx; document.getElementById('editTodoInput').value = todos[idx].text; document.getElementById('editTodoModal').classList.remove('hidden'); };
         window.closeEditTodoModal = () => document.getElementById('editTodoModal').classList.add('hidden');
-        window.saveEditTodo = async () => { if (!requireAuth() || currentEditTodoIndex === -1) return; const newText = document.getElementById('editTodoInput').value.trim(); if (newText) { await updateDoc(doc(getTodosCol(currentUser.uid), todos[currentEditTodoIndex].id), { text: newText }); closeEditTodoModal(); showToast('수정되었습니다.'); } };
-        window.saveCalendarSettings = async () => { if (!requireAuth()) { closeCalendarModal(); return; } const val = document.getElementById('calendarSrcInput').value.trim(); if (val) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: val }, { merge: true }); closeCalendarModal(); showToast('저장되었습니다.'); } };
+        window.saveEditTodo = async () => { if (!requireAuth() || currentEditTodoIndex === -1) return; const val = document.getElementById('editTodoInput').value.trim(); if (val) { await updateDoc(doc(getTodosCol(currentUser.uid), todos[currentEditTodoIndex].id), { text: val }); closeEditTodoModal(); showToast('수정완료'); } };
+        window.saveCalendarSettings = async () => { if (!requireAuth()) { closeCalendarModal(); return; } const val = document.getElementById('calendarSrcInput').value.trim(); if (val) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: val }, { merge: true }); closeCalendarModal(); showToast('저장완료'); } };
 
         document.getElementById('addTodoBtn').onclick = window.addTodo;
-        document.getElementById('todoInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') window.addTodo(); });
+        document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('closeModalBtn').onclick = window.closeModal;
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
         document.getElementById('closeCalendarModalBtn').onclick = window.closeCalendarModal;
@@ -577,7 +578,7 @@
         document.getElementById('closeEditTodoModalBtn').onclick = window.closeEditTodoModal;
         document.getElementById('saveEditTodoBtn').onclick = window.saveEditTodo;
 
-        window.fetchExchangeRate(); setInterval(() => window.fetchExchangeRate(false), 60000);
+        window.fetchExchangeRate(); setInterval(() => window.fetchExchangeRate(), 60000);
     </script>
 </body>
 </html>
