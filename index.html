@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://hangeul.pstatic.net/hangeul_static/css/nanum-square-ac.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
+        body { background-color: #f8f9fa; position: relative; min-height: 100vh; }
         .site-card:hover .delete-btn { opacity: 1; }
         .category-header:hover .edit-tools { opacity: 1; }
         .font-nanum-ac { font-family: 'NanumSquareAc', sans-serif; }
@@ -25,44 +25,52 @@
         /* Sticky Note Styles */
         .sticky-note {
             position: absolute;
-            width: 200px;
-            min-height: 200px;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
-            border-radius: 2px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.15);
+            border-radius: 4px;
             z-index: 100;
             display: flex;
             flex-direction: column;
-            transform: rotate(-1deg);
-            transition: box-shadow 0.2s;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
         }
-        .sticky-note:hover { box-shadow: 8px 8px 20px rgba(0,0,0,0.15); }
         .sticky-note-header {
             cursor: move;
-            height: 24px;
-            background: rgba(0,0,0,0.05);
+            height: 28px;
+            background: rgba(0,0,0,0.07);
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
-            padding: 0 4px;
+            padding: 0 8px;
         }
         .sticky-note-body {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             font-family: 'NanumSquareAc', sans-serif;
-            font-size: 13px;
+            font-size: 14px;
             border: none;
             background: transparent;
             resize: none;
             outline: none;
             line-height: 1.5;
+            width: 100%;
+            height: 100%;
         }
+        /* Color selection dots */
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+        .color-dot:hover { transform: scale(1.2); }
     </style>
 </head>
-<body class="px-4 md:px-10 pb-20 relative font-nanum-ac text-black min-h-screen">
+<body class="px-4 md:px-10 pb-20 font-nanum-ac text-black">
 
-    <div id="sticky-notes-container" class="absolute inset-0 pointer-events-none overflow-hidden" style="z-index: 99;">
-        <!-- 포스트잇들이 여기에 렌더링됩니다 -->
-    </div>
+    <!-- 포스트잇 컨테이너 (Body 전체를 덮도록 설정) -->
+    <div id="sticky-notes-container" class="absolute inset-0 pointer-events-none overflow-visible" style="z-index: 99;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
         <!-- 상단 고정 영역 (헤더 + 카테고리 첫 줄) -->
@@ -83,7 +91,7 @@
                 <!-- 우측 메뉴 및 프로필 -->
                 <div class="flex flex-wrap justify-start xl:justify-end items-center gap-2 w-full xl:w-auto shrink-0 mr-2 ml-2 xl:ml-0">
                     <form action="https://search.shopping.naver.com/search/all" method="get" target="_blank" class="flex items-center relative w-[130px] md:w-[165px]" onsubmit="setTimeout(() => this.reset(), 100)">
-                        <input type="text" name="query" placeholder="네이버 최저가 검색" class="pl-8 pr-3 py-1.5 border border-[#03c75a] rounded-full text-[13px] text-[#03c75a] placeholder-[#03c75a]/70 focus:outline-none focus:ring-2 focus:ring-[#03c75a]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
+                        <input type="text" name="query" placeholder="네이버 최저가" class="pl-8 pr-3 py-1.5 border border-[#03c75a] rounded-full text-[13px] text-[#03c75a] placeholder-[#03c75a]/70 focus:outline-none focus:ring-2 focus:ring-[#03c75a]/30 w-full bg-gray-50 transition-colors" autocomplete="off">
                         <i class="fas fa-shopping-cart absolute left-3 text-[#03c75a] text-xs"></i>
                     </form>
 
@@ -113,7 +121,7 @@
 
                     <div class="flex items-center gap-2">
                         <!-- ✨ 포스트잇 추가 버튼 -->
-                        <button type="button" onclick="addStickyNote()" title="포스트잇 메모 추가" class="bg-yellow-100 hover:bg-yellow-200 border-yellow-300 w-8 h-8 rounded-full border shadow-sm flex items-center justify-center group transition-colors">
+                        <button type="button" onclick="addStickyNote()" title="포스트잇 추가" class="bg-yellow-100 hover:bg-yellow-200 border-yellow-300 w-8 h-8 rounded-full border shadow-sm flex items-center justify-center group transition-colors">
                             <i class="fas fa-sticky-note text-yellow-600 text-xs"></i>
                         </button>
 
@@ -128,7 +136,7 @@
                     </div>
 
                     <div id="user-profile-area" class="hidden flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
-                        <img id="user-avatar" src="" class="w-5 h-5 rounded-full hidden" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                        <img id="user-avatar" src="" class="w-5 h-5 rounded-full hidden">
                         <i id="user-avatar-fallback" class="fas fa-user-circle text-gray-400 text-lg hidden"></i>
                         <span id="user-display-name" class="text-[11px] font-bold text-gray-700 truncate max-w-[100px]"></span>
                         <button onclick="logout()" title="로그아웃" class="ml-1 text-gray-400 hover:text-red-500 transition-colors">
@@ -138,29 +146,23 @@
                 </div>
             </header>
 
-            <div id="sticky-dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mb-2">
-                <!-- 상단 고정 카테고리 -->
-            </div>
+            <div id="sticky-dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mb-2"></div>
         </div>
 
-        <div id="dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mt-2">
-            <!-- 일반 카테고리 -->
-        </div>
+        <div id="dashboard" class="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start mt-2"></div>
 
-        <!-- 하단 업무 도구 섹션 -->
+        <!-- 하단 섹션 -->
         <div class="mt-5 border-t border-gray-200 pt-8 pb-20">
             <div class="w-full flex flex-col md:flex-row items-center mb-6 gap-4">
                 <div class="flex items-center gap-3 shrink-0">
-                    <a href="https://calendar.google.com/" target="_blank" title="구글 캘린더 새 창에서 열기" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group">
-                        <i class="fas fa-calendar-alt text-blue-500 group-hover:scale-110 transition-transform"></i>
+                    <a href="https://calendar.google.com/" target="_blank" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 hover:bg-blue-50 transition-colors">
+                        <i class="fas fa-calendar-alt text-blue-500"></i>
                     </a>
-                    <button type="button" onclick="openCalendarSettings()" class="text-lg font-bold text-gray-800 hover:text-blue-600 transition-colors" title="캘린더 연동 설정">업무 일정</button>
+                    <button type="button" onclick="openCalendarSettings()" class="text-lg font-bold text-gray-800">업무 일정</button>
                 </div>
                 
                 <div id="exchange-rate-display" class="flex-1 flex justify-end items-center px-2 gap-2">
-                    <span class="text-[11px] text-gray-400 flex items-center gap-2">
-                        <i class="fas fa-circle-notch fa-spin"></i> 환율 정보 로딩중...
-                    </span>
+                    <span class="text-[11px] text-gray-400"><i class="fas fa-circle-notch fa-spin"></i> 로딩중...</span>
                 </div>
 
                 <a href="https://calendar.kakao.com" target="_blank" class="flex items-center gap-2 bg-[#FEE500] hover:bg-[#FDD800] text-[#000000] px-4 py-2.5 rounded-lg font-bold text-[13px] shadow-sm transition-colors shrink-0">
@@ -181,7 +183,7 @@
                         <div class="p-2.5 border-b border-gray-100">
                             <div class="flex gap-2">
                                 <input type="text" id="todoInput" placeholder="입력 후 Enter..." class="flex-1 p-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                <button id="addTodoBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-blue-700 transition-colors shrink-0">추가</button>
+                                <button id="addTodoBtn" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-blue-700">추가</button>
                             </div>
                         </div>
                         <div class="p-2 flex-1 overflow-y-auto bg-white">
@@ -191,15 +193,16 @@
                 </div>
             </div>
 
-            <!-- 하단 계산기 및 도구 -->
+            <!-- 하단 도구 모음 영역 -->
             <div class="mt-6 flex flex-col gap-4">
+                <!-- 원가 계산기 -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 overflow-x-auto w-full xl:w-max">
                     <div class="flex flex-wrap items-center justify-start gap-2 md:gap-4 w-max mx-auto xl:mx-0">
                         <div class="flex flex-col">
                             <label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold">달러 가격 (USD)</label>
                             <div class="relative">
                                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">$</span>
-                                <input type="number" id="calc-price" class="w-20 md:w-28 pl-6 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="0" oninput="calculateTotal()">
+                                <input type="number" id="calc-price" class="w-20 md:w-28 pl-6 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none" placeholder="0" oninput="calculateTotal()">
                             </div>
                         </div>
                         <span class="text-gray-400 mt-3 font-bold text-xs">+</span>
@@ -207,7 +210,7 @@
                             <label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold">배송비 (USD)</label>
                             <div class="relative">
                                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">$</span>
-                                <input type="number" id="calc-shipping" class="w-20 md:w-28 pl-6 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="0" oninput="calculateTotal()">
+                                <input type="number" id="calc-shipping" class="w-20 md:w-28 pl-6 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 outline-none" placeholder="0" oninput="calculateTotal()">
                             </div>
                         </div>
                         <span class="text-gray-400 mt-3 font-bold text-xs">×</span>
@@ -218,7 +221,7 @@
                         <span class="text-gray-400 mt-3 font-bold text-xs">×</span>
                         <div class="flex flex-col items-center">
                             <label class="text-[9px] text-gray-500 mb-0.5 font-bold">송금 환율</label>
-                            <input type="number" step="0.01" id="calc-rate-input" class="w-24 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs text-center text-green-700 font-bold focus:ring-2 focus:ring-green-500 outline-none transition-all" placeholder="0" oninput="calculateTotal()">
+                            <input type="number" step="0.01" id="calc-rate-input" class="w-24 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs text-center text-green-700 font-bold outline-none" placeholder="0" oninput="calculateTotal()">
                         </div>
                         <span class="text-gray-400 mt-3 font-bold text-sm">=</span>
                         <div class="flex flex-col items-start min-w-[180px]">
@@ -241,7 +244,6 @@
                                 <i class="fas fa-shipping-fast"></i>
                             </div>
                             <h3 class="text-[12px] font-extrabold text-gray-800">특송 운임 시뮬레이터</h3>
-                            <span class="text-[9px] text-gray-400 font-bold ml-2">인도 찬디가르 ➔ 서울 가산동</span>
                         </div>
                         <div class="text-[9px] font-bold text-gray-500">(L × W × H cm) ÷ 5,000</div>
                     </div>
@@ -288,39 +290,39 @@
     </div>
 
     <!-- Modals -->
-    <div id="siteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity text-black p-4">
+    <div id="siteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-sm:max-w-sm border">
-            <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">바로가기 추가</h3>
+            <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">사이트 추가</h3>
             <input type="hidden" id="modalCategory">
             <div class="space-y-4">
                 <input type="text" id="siteName" placeholder="이름" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
                 <input type="text" id="siteUrl" placeholder="URL" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
             </div>
             <div class="flex justify-end gap-2 mt-8">
-                <button id="closeModalBtn" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
-                <button id="submitSiteBtn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700">저장</button>
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
+                <button id="submitSiteBtn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm">저장</button>
             </div>
         </div>
     </div>
 
-    <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm p-4 text-black">
+    <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm p-4">
         <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-w-md border">
-            <h3 class="text-base font-bold text-gray-800 mb-4">업무 일정 설정</h3>
-            <input type="text" id="calendarSrcInput" placeholder="Google 캘린더 ID 입력" class="w-full p-2.5 mb-6 border rounded-lg bg-gray-50 text-sm">
+            <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
+            <input type="text" id="calendarSrcInput" placeholder="Google 캘린더 ID" class="w-full p-2.5 mb-6 border rounded-lg bg-gray-50 text-sm">
             <div class="flex justify-end gap-2">
-                <button id="closeCalendarModalBtn" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">닫기</button>
-                <button id="saveCalendarSettingsBtn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700">저장</button>
+                <button onclick="closeCalendarModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">닫기</button>
+                <button id="saveCalendarSettingsBtn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm">저장</button>
             </div>
         </div>
     </div>
 
-    <div id="editTodoModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm p-4 text-black">
+    <div id="editTodoModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border">
-            <h3 class="text-base font-bold text-gray-800 mb-5">수정하기</h3>
-            <textarea id="editTodoInput" rows="8" class="w-full p-3 border rounded-lg bg-gray-50 text-sm outline-none"></textarea>
+            <h3 class="text-base font-bold text-gray-800 mb-5">할일 수정</h3>
+            <textarea id="editTodoInput" rows="5" class="w-full p-3 border rounded-lg bg-gray-50 text-sm outline-none"></textarea>
             <div class="flex justify-end gap-2 mt-6">
-                <button id="closeEditTodoModalBtn" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
-                <button id="saveEditTodoBtn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700">확인</button>
+                <button onclick="closeEditTodoModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
+                <button id="saveEditTodoBtn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm">확인</button>
             </div>
         </div>
     </div>
@@ -332,7 +334,7 @@
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase Initialization ---
+        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyCAI9RHb4fuk8RmvlhcRtQjqzm_wKbG42k",
             authDomain: "webdashboard-d9db7.firebaseapp.com",
@@ -356,15 +358,16 @@
         const getTodosCol = (uid) => collection(db, getUserRoot(uid), 'todos');
         const getStickyCol = (uid) => collection(db, getUserRoot(uid), 'stickyNotes');
 
-        // --- Sticky Note Logic ---
+        // --- Sticky Note Functions ---
         window.addStickyNote = async () => {
             if (!requireAuth()) return;
-            const colors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
             const note = {
                 text: '',
-                x: 100 + Math.random() * 100,
-                y: 100 + Math.random() * 100,
-                color: colors[Math.floor(Math.random() * colors.length)],
+                x: 150 + Math.random() * 50,
+                y: 150 + Math.random() * 50,
+                width: 200,
+                height: 200,
+                color: '#fff9c4',
                 createdAt: Date.now()
             };
             await setDoc(doc(getStickyCol(currentUser.uid)), note);
@@ -380,35 +383,44 @@
             await updateDoc(doc(getStickyCol(currentUser.uid), id), data);
         };
 
-        let activeDragNote = null;
+        let activeDragId = null;
         let dragOffset = { x: 0, y: 0 };
 
-        function initStickyDrag(e, id) {
+        window.initStickyDrag = (e, id) => {
             if (!currentUser) return;
-            activeDragNote = document.getElementById(`note-${id}`);
-            const rect = activeDragNote.getBoundingClientRect();
+            const noteEl = document.getElementById(`note-${id}`);
+            activeDragId = id;
+            
+            // 페이지 좌표 기준으로 오프셋 계산 (스크롤 영향 방지)
+            const rect = noteEl.getBoundingClientRect();
             dragOffset.x = e.clientX - rect.left;
             dragOffset.y = e.clientY - rect.top;
             
             document.addEventListener('mousemove', handleStickyMouseMove);
-            document.addEventListener('mouseup', () => handleStickyMouseUp(id));
-        }
+            document.addEventListener('mouseup', handleStickyMouseUp);
+        };
 
         function handleStickyMouseMove(e) {
-            if (!activeDragNote) return;
-            const x = e.clientX - dragOffset.x;
-            const y = e.clientY - dragOffset.y + window.scrollY;
-            activeDragNote.style.left = `${x}px`;
-            activeDragNote.style.top = `${y}px`;
+            if (!activeDragId) return;
+            const noteEl = document.getElementById(`note-${activeDragId}`);
+            // client 좌표가 아닌 page 좌표를 사용하여 스크롤 대응
+            const x = e.pageX - dragOffset.x;
+            const y = e.pageY - dragOffset.y;
+            
+            noteEl.style.left = `${x}px`;
+            noteEl.style.top = `${y}px`;
         }
 
-        async function handleStickyMouseUp(id) {
-            if (!activeDragNote) return;
-            const x = parseFloat(activeDragNote.style.left);
-            const y = parseFloat(activeDragNote.style.top);
+        async function handleStickyMouseUp() {
+            if (!activeDragId) return;
+            const noteEl = document.getElementById(`note-${activeDragId}`);
+            const x = parseFloat(noteEl.style.left);
+            const y = parseFloat(noteEl.style.top);
             
+            const id = activeDragId;
+            activeDragId = null;
             document.removeEventListener('mousemove', handleStickyMouseMove);
-            activeDragNote = null;
+            document.removeEventListener('mouseup', handleStickyMouseUp);
             
             await window.updateStickyNote(id, { x, y });
         }
@@ -416,34 +428,61 @@
         function renderStickyNotes() {
             const container = document.getElementById('sticky-notes-container');
             container.innerHTML = '';
+            
+            const noteColors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
+
             stickyNotes.forEach(note => {
                 const el = document.createElement('div');
                 el.id = `note-${note.id}`;
                 el.className = 'sticky-note pointer-events-auto';
                 el.style.left = `${note.x}px`;
                 el.style.top = `${note.y}px`;
-                el.style.backgroundColor = note.color;
+                el.style.width = `${note.width || 200}px`;
+                el.style.height = `${note.height || 200}px`;
+                el.style.backgroundColor = note.color || '#fff9c4';
                 
                 el.innerHTML = `
                     <div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')">
-                        <button onclick="deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500 text-[10px] p-1"><i class="fas fa-times"></i></button>
+                        <div class="flex gap-1">
+                            ${noteColors.map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}
+                        </div>
+                        <button onclick="deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500 text-[10px]"><i class="fas fa-times"></i></button>
                     </div>
-                    <textarea class="sticky-note-body" placeholder="메모를 입력하세요...">${note.text || ''}</textarea>
+                    <textarea class="sticky-note-body" placeholder="메모...">${note.text || ''}</textarea>
+                    <div class="resize-handle absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize opacity-50">
+                        <i class="fas fa-caret-right rotate-45 text-[8px]"></i>
+                    </div>
                 `;
 
+                // 내용 업데이트
                 const textarea = el.querySelector('textarea');
                 textarea.addEventListener('blur', () => {
-                    if (textarea.value !== note.text) {
-                        window.updateStickyNote(note.id, { text: textarea.value });
+                    if (textarea.value !== note.text) window.updateStickyNote(note.id, { text: textarea.value });
+                });
+
+                // 크기 조절 감지 (ResizeObserver 사용)
+                const observer = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        const { width, height } = entry.contentRect;
+                        // 너무 작은 빈번한 업데이트 방지를 위해 드래그 종료 시점 등 정밀 제어가 필요하지만 우선 blur 시 업데이트와 유사하게 처리
+                    }
+                });
+                observer.observe(el);
+                
+                // 크기 조절 후 저장 (mouseup 시 체크)
+                el.addEventListener('mouseup', (e) => {
+                    const newW = el.offsetWidth;
+                    const newH = el.offsetHeight;
+                    if (Math.abs(newW - (note.width || 200)) > 5 || Math.abs(newH - (note.height || 200)) > 5) {
+                        window.updateStickyNote(note.id, { width: newW, height: newH });
                     }
                 });
 
                 container.appendChild(el);
             });
         }
-        window.initStickyDrag = initStickyDrag;
 
-        // --- Utils & State Management ---
+        // --- Core UI & State ---
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             toast.innerText = msg; toast.classList.remove('hidden');
@@ -516,7 +555,7 @@
             }
         };
 
-        // --- FedEx & Cost Logics ---
+        // --- Calculation Logics ---
         window.calculateFedEx = () => {
             const L = parseFloat(document.getElementById('fedex-l').value) || 0;
             const W = parseFloat(document.getElementById('fedex-w').value) || 0;
@@ -556,11 +595,11 @@
             } catch (e) {}
         };
 
-        // --- CRUD ---
+        // --- Category/Site Management ---
         window.addCategory = async () => { if (!requireAuth()) return; const name = prompt('새 카테고리 이름을 입력하세요:'); if (name && name.trim()) { categories.push(name.trim()); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); } };
-        window.renameCategory = async (oldName) => { if (!requireAuth()) return; const newName = prompt(`'${oldName}' 이름 변경:`, oldName); if (newName && newName.trim() !== oldName) { const idx = categories.indexOf(oldName); categories[idx] = newName.trim(); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); const batch = sites.filter(s => s.category === oldName).map(s => updateDoc(doc(getSitesCol(currentUser.uid), s.id), { category: newName.trim() })); await Promise.all(batch); } };
-        window.deleteCategory = async (name) => { if (!requireAuth()) return; if (confirm(`'${name}' 삭제하시겠습니까?`)) { const newCats = categories.filter(c => c !== name); await setDoc(getConfigDoc(currentUser.uid), { categories: newCats, calendarId }, { merge: true }); const del = sites.filter(s => s.category === name).map(s => deleteDoc(doc(getSitesCol(currentUser.uid), s.id))); await Promise.all(del); } };
-        window.submitSite = async () => { if (!requireAuth()) { closeModal(); return; } const name = document.getElementById('siteName').value.trim(); let url = document.getElementById('siteUrl').value.trim(); const cat = document.getElementById('modalCategory').value; if (!name || !url) return; if (!url.startsWith('http')) url = 'https://' + url; await setDoc(doc(getSitesCol(currentUser.uid)), { name, url, category: cat, createdAt: Date.now(), order: sites.filter(s => s.category === cat).length + 1 }); closeModal(); showToast('추가되었습니다.'); };
+        window.renameCategory = async (oldName) => { if (!requireAuth()) return; const newName = prompt(`'${oldName}' 이름 변경:`, oldName); if (newName && newName.trim() !== oldName) { const idx = categories.indexOf(oldName); categories[idx] = newName.trim(); await setDoc(getConfigDoc(currentUser.uid), { categories, calendarId }, { merge: true }); const batchPromises = sites.filter(s => s.category === oldName).map(s => updateDoc(doc(getSitesCol(currentUser.uid), s.id), { category: newName.trim() })); await Promise.all(batchPromises); } };
+        window.deleteCategory = async (catName) => { if (!requireAuth()) return; if (confirm(`'${catName}' 카테고리를 삭제하시겠습니까?`)) { const newCats = categories.filter(c => c !== catName); await setDoc(getConfigDoc(currentUser.uid), { categories: newCats, calendarId }, { merge: true }); const deletions = sites.filter(s => s.category === catName).map(s => deleteDoc(doc(getSitesCol(currentUser.uid), s.id))); await Promise.all(deletions); } };
+        window.submitSite = async () => { if (!requireAuth()) { closeModal(); return; } const name = document.getElementById('siteName').value.trim(); let url = document.getElementById('siteUrl').value.trim(); const cat = document.getElementById('modalCategory').value; if (!name || !url) return; if (!url.startsWith('http')) url = 'https://' + url; const maxOrder = sites.filter(s => s.category === cat).length; await setDoc(doc(getSitesCol(currentUser.uid)), { name, url, category: cat, createdAt: Date.now(), order: maxOrder + 1 }); closeModal(); showToast('추가되었습니다.'); };
         window.deleteSite = async (docId) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) { await deleteDoc(doc(getSitesCol(currentUser.uid), docId)); showToast('삭제되었습니다.'); } };
         
         function render() {
@@ -568,7 +607,6 @@
             const main = document.getElementById('dashboard');
             sticky.innerHTML = ''; main.innerHTML = '';
             if (!categories || categories.length === 0) return;
-
             categories.forEach((cat, cIdx) => {
                 const section = document.createElement('div');
                 section.className = 'category-section bg-white border border-gray-200 border-b-[4px] border-b-gray-300 shadow-md px-5 py-2.5 rounded-2xl flex flex-col h-full cursor-default';
@@ -577,12 +615,9 @@
                 section.addEventListener('dragend', window.handleDragEnd);
                 section.addEventListener('dragover', (e) => e.preventDefault());
                 section.addEventListener('drop', (e) => window.handleDrop(e, cIdx));
-                
                 const catSites = sites.filter(s => s.category === cat).sort((a,b) => (a.order || 0) - (b.order || 0));
                 const sitesHtml = catSites.map(site => `<div class="site-card relative flex flex-col items-center group p-1 cursor-grab transition-all"><button onclick="deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center hover:bg-red-600 shadow-sm z-10 transition-opacity"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
-                
                 section.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2><div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-auto"><button onclick="renameCategory('${cat}')" class="text-gray-400 hover:text-blue-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-pen text-[9px]"></i></button><button onclick="deleteCategory('${cat}')" class="text-gray-400 hover:text-red-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-trash text-[9px]"></i></button></div></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sitesHtml}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
-                
                 if (cIdx < 2) { sticky.appendChild(section); } else { main.appendChild(section); }
             });
         }
@@ -609,12 +644,6 @@
 
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
-        document.getElementById('closeModalBtn').onclick = window.closeModal;
-        document.getElementById('submitSiteBtn').onclick = window.submitSite;
-        document.getElementById('closeCalendarModalBtn').onclick = window.closeCalendarModal;
-        document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
-        document.getElementById('closeEditTodoModalBtn').onclick = window.closeEditTodoModal;
-        document.getElementById('saveEditTodoBtn').onclick = window.saveEditTodo;
 
         window.fetchExchangeRate(); setInterval(() => window.fetchExchangeRate(), 60000);
     </script>
