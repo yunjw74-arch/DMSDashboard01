@@ -93,11 +93,10 @@
 </head>
 <body class="px-4 md:px-10 pb-20 font-nanum-ac text-black">
 
-    <!-- 포스트잇 컨테이너 -->
     <div id="sticky-notes-container" class="fixed inset-0 pointer-events-none overflow-visible" style="z-index: 999;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
-        <!-- 상단 고정 영역 (Z-index: 1100으로 최상위 유지) -->
+        <!-- Header (Sticky z-index: 1100) -->
         <div class="sticky top-0 z-[1100] bg-[#f8f9fa] border-b border-gray-200">
             <header class="pt-4 md:pt-6 pb-2 flex flex-col xl:flex-row items-center justify-between gap-4">
                 <div class="flex flex-wrap justify-start items-center gap-3 w-full flex-1 ml-2">
@@ -226,7 +225,6 @@
                 <h3 class="text-lg font-black text-gray-800">Quick Access 관리</h3>
                 <button onclick="window.closeMySitesManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </div>
-            
             <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100">
                 <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">새 바로가기 추가</p>
                 <div class="grid grid-cols-1 gap-3">
@@ -235,10 +233,8 @@
                     <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors">추가하기</button>
                 </div>
             </div>
-            
             <p class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-wider">현재 등록된 사이트 (드래그 순서 변경)</p>
             <div id="my-sites-list" class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar mb-6"></div>
-
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shrink-0">
                 <p class="text-[11px] font-bold text-blue-600 mb-3 uppercase tracking-wider">비즈니스 도구 설정</p>
                 <div class="flex flex-col gap-2">
@@ -263,7 +259,7 @@
         </div>
     </div>
 
-    <!-- 사이트 추가 모달 -->
+    <!-- 일반 사이트 추가 모달 -->
     <div id="siteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-sm:max-w-sm border">
             <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">사이트 추가</h3>
@@ -317,26 +313,34 @@
         let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false, showLedRatio: false };
         let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
 
-        const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`; // ✨ Rule 1: Leading slash added
+        const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
         const getMySitesCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'mySites');
         const getSitesCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'sites');
         const getTodosCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'todos');
         const getStickyCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'stickyNotes');
         const getConfigDoc = (uid) => doc(db, ...getUserRoot(uid).split('/').filter(Boolean), 'config', 'settings');
 
-        // --- GLOBAL FUNCTIONS BINDING ---
-        window.showToast = (msg) => {
+        // --- ATTACH GLOBAL FUNCTIONS TO WINDOW IMMEDIATELY ---
+        const showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
             toast.innerText = msg; toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('opacity-100'), 10);
             setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
         };
+        window.showToast = showToast;
+
+        const requireAuth = () => {
+            if (!currentUser) {
+                window.showToast('로그인이 필요한 기능입니다.');
+                return false;
+            }
+            return true;
+        };
+        window.requireAuth = requireAuth;
 
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); window.showToast('로그아웃 완료'); } catch (e) {} };
-        
-        window.requireAuth = () => { if (!currentUser) { window.showToast('로그인이 필요한 기능입니다.'); return false; } return true; };
 
         window.updateCalendarIframe = () => {
             const iframe = document.getElementById('calendar-iframe-month');
@@ -358,7 +362,7 @@
             } catch (e) {}
         };
 
-        // --- Business Logic ---
+        // --- Calculations ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
             const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
@@ -381,16 +385,23 @@
         window.updateLedWallRecs = () => {
             const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0, hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
-            const cw1 = Math.floor(wIn / 320) || 1, ch1 = Math.floor(hIn / 160) || 1, rw1 = cw1 * 320, rh1 = ch1 * 160;
-            const rec1s = document.getElementById('led-rec1-size'), rec1c = document.getElementById('led-rec1-count'), rec1i = document.getElementById('led-rec1-inch');
-            if(rec1s) rec1s.innerText = `${rw1} x ${rh1} mm`;
-            if(rec1c) rec1c.innerText = `${cw1}W x ${ch1}H (총 ${cw1 * ch1}장)`;
-            if(rec1i) rec1i.innerText = (Math.sqrt(rw1*rw1 + rh1*rh1) / 25.4).toFixed(1) + " inch";
-            const cw2 = Math.ceil(wIn / 320) || 1, ch2 = Math.ceil(hIn / 160) || 1, rw2 = cw2 * 320, rh2 = ch2 * 160;
-            const rec2s = document.getElementById('led-rec2-size'), rec2c = document.getElementById('led-rec2-count'), rec2i = document.getElementById('led-rec2-inch');
-            if(rec2s) rec2s.innerText = `${rw2} x ${rh2} mm`;
-            if(rec2c) rec2c.innerText = `${cw2}W x ${ch2}H (총 ${cw2 * ch2}장)`;
-            if(rec2i) rec2i.innerText = (Math.sqrt(rw2*rw2 + rh2*rh2) / 25.4).toFixed(1) + " inch";
+
+            const recs = [
+                { w: Math.floor(wIn / 320), h: Math.floor(hIn / 160) }, // 가로 하향, 세로 하향
+                { w: Math.floor(wIn / 320), h: Math.ceil(hIn / 160) },  // 가로 하향, 세로 상향
+                { w: Math.ceil(wIn / 320), h: Math.floor(hIn / 160) },  // 가로 상향, 세로 하향
+                { w: Math.ceil(wIn / 320), h: Math.ceil(hIn / 160) }   // 가로 상향, 세로 상향
+            ];
+
+            recs.forEach((rec, idx) => {
+                const rw = rec.w * 320, rh = rec.h * 160;
+                const sizeEl = document.getElementById(`led-rec${idx+1}-size`);
+                const countEl = document.getElementById(`led-rec${idx+1}-count`);
+                const inchEl = document.getElementById(`led-rec${idx+1}-inch`);
+                if(sizeEl) sizeEl.innerText = `${rw} x ${rh} mm`;
+                if(countEl) countEl.innerText = `${rec.w}W x ${rec.h}H (총 ${rec.w * rec.h}장)`;
+                if(inchEl) inchEl.innerText = (Math.sqrt(rw*rw + rh*rh) / 25.4).toFixed(1) + " inch";
+            });
         };
 
         window.calculate169Ratio = (type) => {
@@ -400,10 +411,11 @@
             if (w > 0 && h > 0 && diagD) diagD.innerText = (Math.sqrt(w*w + h*h) / 25.4).toFixed(1) + " inch";
         };
 
-        // --- Render Functions ---
+        // --- Render Business Tools ---
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
             if (!container) return; container.innerHTML = ''; if (!currentUser) return;
+
             if (toolsVisibility.showCalculator) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max relative group';
                 div.innerHTML = `<button onclick="window.hideTool('calculator')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button><div class="flex flex-wrap items-center justify-start gap-4"><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">USD Price</label><input type="number" id="calc-price" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">+</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Shipping</label><input type="number" id="calc-shipping" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex flex-col text-center"><label class="text-[9px] text-blue-500 font-bold uppercase">Total USD</label><div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px]">$ 0.00</div></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Rate</label><input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex items-center gap-2"><div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div><a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm"><span class="text-[#03c75a] font-black text-[15px]">N</span></a></div></div>`;
@@ -416,12 +428,40 @@
             }
             if (toolsVisibility.showLedCalc) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full relative group';
-                div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button><div class="flex items-center gap-2 mb-4 border-b border-gray-50 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 (320x160)</h3></div><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="flex flex-col gap-4 bg-gray-50/50 p-3 rounded-xl border border-dashed border-gray-200"><p class="text-[10px] font-black text-gray-400 uppercase tracking-tight">사이즈 입력 (mm)</p><div class="flex items-center gap-3"><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-gray-500 mb-1">가로 (W)</label><input type="number" id="led-wall-w" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600"></div><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-gray-500 mb-1">세로 (H)</label><input type="number" id="led-wall-h" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600"></div></div></div><div class="flex flex-col gap-3"><div class="flex gap-4"><div class="flex-1 bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center"><p class="text-[9px] font-bold text-gray-400 mb-1">추천 1 (작은 쪽)</p><div class="text-[11px] font-black text-gray-700" id="led-rec1-size">-</div><div class="text-[9px] font-bold text-blue-500 mt-1" id="led-rec1-count">-</div><div class="text-[10px] font-black text-blue-600 mt-1 bg-blue-50 py-0.5 rounded" id="led-rec1-inch">0.0 inch</div></div><div class="flex-1 bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center border-l-4 border-l-blue-500"><p class="text-[9px] font-bold text-gray-400 mb-1">추천 2 (큰 쪽)</p><div class="text-[11px] font-black text-gray-700" id="led-rec2-size">-</div><div class="text-[9px] font-bold text-blue-500 mt-1" id="led-rec2-count">-</div><div class="text-[10px] font-black text-blue-600 mt-1 bg-blue-50 py-0.5 rounded" id="led-rec2-inch">0.0 inch</div></div></div></div></div>`;
+                div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button>
+                    <div class="flex items-center gap-2 mb-4 border-b border-gray-50 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 (320x160)</h3></div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="flex flex-col gap-4 bg-gray-50 p-3 rounded-xl border border-dashed border-gray-200 md:col-span-1">
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-tight">사이즈 입력 (mm)</p>
+                            <div class="flex flex-col gap-3">
+                                <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">가로 (W)</label><input type="number" id="led-wall-w" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600"></div>
+                                <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">세로 (H)</label><input type="number" id="led-wall-h" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600"></div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                            ${[1,2,3,4].map(i => `<div class="bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center">
+                                <p class="text-[9px] font-bold text-gray-400 mb-1">추천 ${i}</p>
+                                <div class="text-[10px] font-black text-gray-700" id="led-rec${i}-size">-</div>
+                                <div class="text-[8px] font-bold text-blue-500 mt-1" id="led-rec${i}-count">-</div>
+                                <div class="text-[9px] font-black text-blue-600 mt-1 bg-blue-50 py-0.5 rounded" id="led-rec${i}-inch">0.0 inch</div>
+                            </div>`).join('')}
+                        </div>
+                    </div>`;
                 container.appendChild(div);
             }
             if (toolsVisibility.showLedRatio) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full xl:w-max relative group';
-                div.innerHTML = `<button onclick="window.hideTool('ledratio')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button><div class="flex items-center gap-2 mb-3"><i class="fas fa-expand-arrows-alt text-green-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">16:9 자동 비율 계산기</h3></div><div class="flex items-center gap-4"><div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">가로 (mm)</label><input type="number" id="led-ratio-w" oninput="window.calculate169Ratio('W')" class="w-24 p-2 border border-gray-200 rounded-lg text-xs font-bold text-green-600"></div><span class="mt-4 text-gray-300">:</span><div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">세로 (mm)</label><input type="number" id="led-ratio-h" oninput="window.calculate169Ratio('H')" class="w-24 p-2 border border-gray-200 rounded-lg text-xs font-bold text-green-600"></div><div class="bg-green-600 px-4 py-2 rounded-lg text-center shadow-sm ml-2"><label class="text-[8px] font-bold text-white/70 block mb-0.5">Diagonal</label><div id="led-ratio-diag" class="text-xs font-black text-white">0.0 inch</div></div></div>`;
+                div.innerHTML = `<button onclick="window.hideTool('ledratio')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button>
+                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-expand-arrows-alt text-green-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">16:9 자동 비율 계산기</h3></div>
+                    <div class="flex items-center gap-4">
+                        <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">가로 (mm)</label><input type="number" id="led-ratio-w" oninput="window.calculate169Ratio('W')" class="w-24 p-2 border border-gray-200 rounded-lg text-xs font-bold text-green-600"></div>
+                        <span class="mt-4 text-gray-300">:</span>
+                        <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">세로 (mm)</label><input type="number" id="led-ratio-h" oninput="window.calculate169Ratio('H')" class="w-24 p-2 border border-gray-200 rounded-lg text-xs font-bold text-green-600"></div>
+                        <div class="bg-green-600 px-4 py-2 rounded-lg text-center shadow-sm ml-2">
+                            <label class="text-[8px] font-bold text-white/70 block mb-0.5">Diagonal</label>
+                            <div id="led-ratio-diag" class="text-xs font-black text-white">0.0 inch</div>
+                        </div>
+                    </div>`;
                 container.appendChild(div);
             }
         };
@@ -437,11 +477,16 @@
 
         window.updateToolsVisibility = async () => {
             if (!requireAuth()) return;
-            toolsVisibility = { showCalculator: document.getElementById('toggle-calculator').checked, showFedEx: document.getElementById('toggle-fedex').checked, showLedCalc: document.getElementById('toggle-ledcalc').checked, showLedRatio: document.getElementById('toggle-ledratio').checked };
+            toolsVisibility = { 
+                showCalculator: document.getElementById('toggle-calculator').checked, 
+                showFedEx: document.getElementById('toggle-fedex').checked, 
+                showLedCalc: document.getElementById('toggle-ledcalc').checked,
+                showLedRatio: document.getElementById('toggle-ledratio').checked
+            };
             await setDoc(getConfigDoc(currentUser.uid), { tools: toolsVisibility }, { merge: true });
         };
 
-        // --- Sticky & Dashboard Handlers ---
+        // --- Sticky Notes Logic ---
         window.initStickyDrag = (e, id) => {
             if (e.target.closest('.color-dot') || e.target.closest('button')) return;
             e.preventDefault(); window.getSelection()?.removeAllRanges();
@@ -472,13 +517,9 @@
         }
 
         window.renderStickyNotes = () => {
-            const container = document.getElementById('sticky-notes-container'); container.innerHTML = '';
-            const noteColors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
+            const container = document.getElementById('sticky-notes-container'); container.innerHTML = ''; const noteColors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
             stickyNotes.forEach(note => {
-                const el = document.createElement('div'); el.id = `note-${note.id}`; el.className = 'sticky-note pointer-events-auto';
-                el.style.left = `${note.x}px`; el.style.top = `${note.y}px`;
-                el.style.width = `${note.width || 220}px`; el.style.height = `${note.height || 220}px`;
-                el.style.backgroundColor = note.color || '#fff9c4';
+                const el = document.createElement('div'); el.id = `note-${note.id}`; el.className = 'sticky-note pointer-events-auto'; el.style.left = `${note.x}px`; el.style.top = `${note.y}px`; el.style.width = `${note.width || 220}px`; el.style.height = `${note.height || 220}px`; el.style.backgroundColor = note.color || '#fff9c4';
                 const d = new Date(note.createdAt), ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                 el.innerHTML = `<div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')"><div class="flex gap-1.5">${noteColors.map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div><span class="note-date">${ds}</span><button onclick="window.deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button></div><textarea class="sticky-note-body" placeholder="메모...">${note.text || ''}</textarea>`;
                 const ta = el.querySelector('textarea'); ta.onblur = () => { if (ta.value !== note.text) window.updateStickyNote(note.id, { text: ta.value }); };
@@ -487,16 +528,25 @@
             });
         };
 
+        // --- Dashboard & MY sites ---
+        window.handleMyDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
+        window.handleMyDrop = async (e, dropIdx) => {
+            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
+            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
+                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
+                const baseTime = Date.now(); const batch = mySites.map((s, i) => updateDoc(doc(getMySitesCol(currentUser.uid), s.id), { createdAt: baseTime + i }));
+                await Promise.all(batch);
+            }
+        };
+
         window.renderMySites = () => {
             const container = document.getElementById('my-sites-container'); if (!container) return;
             container.innerHTML = mySites.map((s, idx) => `<div class="my-site-item shrink-0" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
         };
-        
         window.renderMySitesList = () => {
             const list = document.getElementById('my-sites-list'); if (!list) return;
             list.innerHTML = mySites.map((s, idx) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-sm font-bold text-gray-700">${s.name}</span></div><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-trash-alt text-xs"></i></button></div>`).join('');
         };
-
         window.render = () => {
             const m = document.getElementById('dashboard'); m.innerHTML = ''; if (!categories.length) return;
             categories.forEach((cat, i) => {
@@ -508,13 +558,7 @@
             });
         };
 
-        window.renderTodos = () => {
-            const l = document.getElementById('todoList'); if (!l) return;
-            document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
-            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
-        };
-
-        // --- Interaction Globals ---
+        // --- Modals ---
         window.openMySitesManager = () => { if (!requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
         window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
         window.submitMySite = async () => {
@@ -542,17 +586,8 @@
         window.toggleTodo = async (id, d) => await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !d });
         window.deleteTodo = async (id) => await deleteDoc(doc(getTodosCol(currentUser.uid), id));
         window.addTodo = async () => { const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
-        window.handleMyDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
-        window.handleMyDrop = async (e, dropIdx) => {
-            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
-            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
-                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
-                const baseTime = Date.now(); const batch = mySites.map((s, i) => updateDoc(doc(getMySitesCol(currentUser.uid), s.id), { createdAt: baseTime + i }));
-                await Promise.all(batch);
-            }
-        };
 
-        // --- Auth & Listener ---
+        // --- Firebase Handlers ---
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user && !user.isAnonymous) {
@@ -565,7 +600,7 @@
                 const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.remove('hidden');
                 const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.add('hidden');
                 unsubs.forEach(u => u()); unsubs = []; categories = []; sites = []; mySites = []; stickyNotes = []; toolsVisibility = {showCalculator: false, showFedEx: false, showLedCalc: false, showLedRatio: false};
-                window.render(); window.renderStickyNotes(); window.renderTodos(); window.renderBusinessTools(); window.updateCalendarIframe();
+                window.render(); window.renderStickyNotes(); window.renderBusinessTools(); window.updateCalendarIframe();
             }
         });
 
@@ -590,7 +625,7 @@
             unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
         }
 
-        // --- Initialize ---
+        // --- Final Execution ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
