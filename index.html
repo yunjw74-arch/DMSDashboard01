@@ -93,11 +93,10 @@
 </head>
 <body class="px-4 md:px-10 pb-20 font-nanum-ac text-black">
 
-    <!-- 포스트잇 레이어 -->
     <div id="sticky-notes-container" class="fixed inset-0 pointer-events-none overflow-visible" style="z-index: 999;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
-        <!-- 상단 고정 영역 (Z-index를 높여 클릭 간섭 해결) -->
+        <!-- 상단 고정 영역 -->
         <div class="sticky top-0 z-[1100] bg-[#f8f9fa] border-b border-gray-200">
             <header class="pt-4 md:pt-6 pb-2 flex flex-col xl:flex-row items-center justify-between gap-4">
                 <div class="flex flex-wrap justify-start items-center gap-3 w-full flex-1 ml-2">
@@ -215,13 +214,14 @@
                 </div>
             </div>
 
+            <!-- 동적 비즈니스 도구 영역 -->
             <div id="business-tools-container" class="mt-6 flex flex-col gap-4"></div>
         </div>
     </div>
 
     <!-- 통합 관리 모달 -->
     <div id="mySitesManagerModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
-        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border flex flex-col max-h-[85vh]">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-md border flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-black text-gray-800">Quick Access 관리</h3>
                 <button onclick="window.closeMySitesManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
@@ -259,7 +259,7 @@
         </div>
     </div>
 
-    <!-- 사이트 추가 모달 -->
+    <!-- 일반 사이트 추가 모달 -->
     <div id="siteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-sm:max-w-sm border">
             <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">사이트 추가</h3>
@@ -275,6 +275,7 @@
         </div>
     </div>
 
+    <!-- 캘린더 설정 모달 -->
     <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-w-md border">
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
@@ -312,24 +313,26 @@
         let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
         let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
 
-        const getUserRoot = (uid) => `artifacts/${appId}/users/${uid}`; // ✨ Rule 1 Path (Removed leading slash as it's added in Split)
+        const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`; // Strict Path (Rule 1)
 
         // --- GLOBAL FUNCTIONS - DEFINED EARLY FOR RELIABILITY ---
-        window.showToast = (msg) => {
+        const showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
             toast.innerText = msg; toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('opacity-100'), 10);
             setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
         };
+        window.showToast = showToast;
 
-        window.requireAuth = () => {
+        const requireAuth = () => {
             if (!currentUser) {
                 window.showToast('로그인이 필요한 기능입니다.');
                 return false;
             }
             return true;
         };
+        window.requireAuth = requireAuth;
 
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); window.showToast('로그아웃 완료'); } catch (e) {} };
@@ -354,7 +357,7 @@
             } catch (e) {}
         };
 
-        // --- Core Business Logics ---
+        // --- Core Logics & Calculations ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
             const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
@@ -379,17 +382,15 @@
             const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0, hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
 
-            const wOpts = [Math.floor(wIn / 320) || 1, Math.ceil(wIn / 320) || 1];
-            const hOpts = [Math.floor(hIn / 160) || 1, Math.ceil(hIn / 160) || 1];
+            const wLow = Math.floor(wIn / 320) || 1, wHigh = Math.ceil(wIn / 320) || 1;
+            const hLow = Math.floor(hIn / 160) || 1, hHigh = Math.ceil(hIn / 160) || 1;
             
-            const uniqueW = [...new Set(wOpts)].sort((a,b) => a-b);
-            const uniqueH = [...new Set(hOpts)].sort((a,b) => a-b);
-            
-            let combinations = [];
-            combinations.push({ w: uniqueW[0], h: uniqueH[0] });
-            combinations.push({ w: uniqueW[0], h: uniqueH[1] || uniqueH[0] });
-            combinations.push({ w: uniqueW[1] || uniqueW[0], h: uniqueH[0] });
-            combinations.push({ w: uniqueW[1] || uniqueW[0], h: uniqueH[1] || uniqueH[0] });
+            const combinations = [
+                { w: wLow, h: hLow },
+                { w: wLow, h: hHigh },
+                { w: wHigh, h: hLow },
+                { w: wHigh, h: hHigh }
+            ];
 
             combinations.forEach((rec, idx) => {
                 const rw = rec.w * 320, rh = rec.h * 160;
@@ -409,7 +410,7 @@
             if (w > 0 && h > 0 && diagD) diagD.innerText = (Math.sqrt(w*w + h*h) / 25.4).toFixed(1) + " inch";
         };
 
-        // --- Render Business Tools ---
+        // --- Render Business Tools (LED Recommender + Integrated Ratio Calc) ---
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
             if (!container) return; container.innerHTML = ''; if (!currentUser) return;
@@ -427,7 +428,7 @@
             if (toolsVisibility.showLedCalc) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full relative group';
                 div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button>
-                    <div class="flex items-center gap-2 mb-4 border-b border-gray-50 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 & 16:9 계산기 (320x160)</h3></div>
+                    <div class="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 & 16:9 계산기 (320x160)</h3></div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="flex flex-col gap-4 md:col-span-1">
                             <div class="bg-gray-50 p-3 rounded-xl border border-dashed border-gray-200">
@@ -440,8 +441,8 @@
                             <div class="bg-green-50/50 p-3 rounded-xl border border-dashed border-green-200">
                                 <p class="text-[10px] font-black text-green-600 uppercase tracking-tight mb-2">16:9 비율 계산</p>
                                 <div class="grid grid-cols-2 gap-2 mb-2">
-                                    <input type="number" id="led-ratio-w" placeholder="W" oninput="window.calculate169Ratio('W')" class="w-full p-1.5 bg-white border border-gray-200 rounded text-xs font-bold text-green-600">
-                                    <input type="number" id="led-ratio-h" placeholder="H" oninput="window.calculate169Ratio('H')" class="w-full p-1.5 bg-white border border-gray-200 rounded text-xs font-bold text-green-600">
+                                    <input type="number" id="led-ratio-w" placeholder="W" oninput="window.calculate169Ratio('W')" class="w-full p-1.5 bg-white border border-gray-200 rounded text-xs font-bold text-green-600 outline-none">
+                                    <input type="number" id="led-ratio-h" placeholder="H" oninput="window.calculate169Ratio('H')" class="w-full p-1.5 bg-white border border-gray-200 rounded text-xs font-bold text-green-600 outline-none">
                                 </div>
                                 <div id="led-ratio-diag" class="bg-green-600 text-white text-[10px] font-black py-1 rounded text-center shadow-sm">0.0 inch</div>
                             </div>
@@ -511,18 +512,18 @@
                 } else { 
                     setDoc(doc(db, ...pathArr, 'config', 'settings'), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: false, showFedEx: false, showLedCalc: false} }); 
                 }
-            }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }));
+            }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }, (err) => {}));
             unsubs.push(onSnapshot(collection(db, ...pathArr, 'mySites'), (snap) => { 
                 mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 mySites.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
                 window.renderMySites(); window.renderMySitesList(); 
-            }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
+            }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }, (err) => {}));
         }
 
-        // --- Interaction Globals ---
+        // --- Interaction Handlers ---
         window.openMySitesManager = () => { if (!window.requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
         window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
         window.submitMySite = async () => {
@@ -532,7 +533,7 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, createdAt: Date.now() });
             document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
         };
-        window.addStickyNote = async () => { if (!window.requireAuth()) return; const offset = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', crypto.randomUUID()), { text: '', x: 150 + offset, y: 150 + offset, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
+        window.addStickyNote = async () => { if (!window.requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', crypto.randomUUID()), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
         window.deleteStickyNote = async (id) => { if (!window.requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id)); };
         window.updateStickyNote = async (id, data) => { if (!window.requireAuth()) return; await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id), data); };
         window.deleteSite = async (id, isMy = false) => { if (!window.requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), isMy ? 'mySites' : 'sites', id)); };
@@ -553,7 +554,7 @@
         window.deleteTodo = async (id) => await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id));
         window.addTodo = async () => { if (!window.requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', crypto.randomUUID()), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
 
-        // --- Sticky & Site Renders ---
+        // --- Sticky & Dashboard Renders ---
         window.initStickyDrag = (e, id) => {
             if (e.target.closest('.color-dot') || e.target.closest('button')) return;
             e.preventDefault(); window.getSelection()?.removeAllRanges();
@@ -573,11 +574,11 @@
             await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id), { x: fx, y: fy });
         }
         window.renderStickyNotes = () => {
-            const container = document.getElementById('sticky-notes-container'); container.innerHTML = ''; const colors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
+            const container = document.getElementById('sticky-notes-container'); container.innerHTML = '';
             stickyNotes.forEach(note => {
                 const el = document.createElement('div'); el.id = `note-${note.id}`; el.className = 'sticky-note pointer-events-auto'; el.style.left = `${note.x}px`; el.style.top = `${note.y}px`; el.style.width = `${note.width || 220}px`; el.style.height = `${note.height || 220}px`; el.style.backgroundColor = note.color || '#fff9c4';
                 const d = new Date(note.createdAt), ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                el.innerHTML = `<div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')"><div class="flex gap-1.5">${colors.map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div><span class="note-date">${ds}</span><button onclick="window.deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button></div><textarea class="sticky-note-body">${note.text || ''}</textarea>`;
+                el.innerHTML = `<div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')"><div class="flex gap-1.5">${['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'].map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div><span class="note-date">${ds}</span><button onclick="window.deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button></div><textarea class="sticky-note-body">${note.text || ''}</textarea>`;
                 const ta = el.querySelector('textarea'); ta.onblur = () => { if (ta.value !== note.text) window.updateStickyNote(note.id, { text: ta.value }); };
                 el.onmouseup = async () => { if (!activeDragId) { const nw = el.offsetWidth, nh = el.offsetHeight; if (Math.abs(nw - (note.width||220)) > 5 || Math.abs(nh - (note.height||220)) > 5) await window.updateStickyNote(note.id, {width:nw, height:nh}); } };
                 container.appendChild(el);
@@ -604,7 +605,7 @@
         window.renderTodos = () => {
             const l = document.getElementById('todoList'); if (!l) return;
             document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
-            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
+            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
         window.handleMyDragStart = (e, idx) => { if (!window.requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
         window.handleMyDrop = async (e, dropIdx) => {
@@ -616,7 +617,7 @@
             }
         };
 
-        // --- Final Init ---
+        // --- Final Execution ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
