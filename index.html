@@ -225,6 +225,7 @@
                 <h3 class="text-lg font-black text-gray-800">Quick Access 관리</h3>
                 <button onclick="window.closeMySitesManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </div>
+            
             <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100">
                 <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">새 바로가기 추가</p>
                 <div class="grid grid-cols-1 gap-3">
@@ -233,8 +234,10 @@
                     <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors">추가하기</button>
                 </div>
             </div>
+            
             <p class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-wider">현재 등록된 사이트 (드래그 순서 변경)</p>
             <div id="my-sites-list" class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar mb-6"></div>
+
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shrink-0">
                 <p class="text-[11px] font-bold text-blue-600 mb-3 uppercase tracking-wider">비즈니스 도구 설정</p>
                 <div class="flex flex-col gap-2">
@@ -248,11 +251,7 @@
                     </label>
                     <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
                         <input type="checkbox" id="toggle-ledcalc" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="text-sm font-bold text-gray-700">LED 모듈 추천기</span>
-                    </label>
-                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
-                        <input type="checkbox" id="toggle-ledratio" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="text-sm font-bold text-gray-700">16:9 자동 비율 계산기</span>
+                        <span class="text-sm font-bold text-gray-700">LED 모듈 추천기 & 16:9 계산기</span>
                     </label>
                 </div>
             </div>
@@ -275,7 +274,6 @@
         </div>
     </div>
 
-    <!-- 캘린더 설정 모달 -->
     <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-w-md border">
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
@@ -286,6 +284,8 @@
             </div>
         </div>
     </div>
+
+    <div id="toast" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white px-6 py-3 rounded-full shadow-2xl z-[3000] text-xs font-bold opacity-0 transition-opacity duration-300"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -310,34 +310,27 @@
         let currentUser = null;
         let sites = [], categories = [], mySites = [], todos = [], stickyNotes = [], unsubs = [];
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
-        let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false, showLedRatio: false };
+        let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
         let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
 
         const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
-        const getMySitesCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'mySites');
-        const getSitesCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'sites');
-        const getTodosCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'todos');
-        const getStickyCol = (uid) => collection(db, ...getUserRoot(uid).split('/').filter(Boolean), 'stickyNotes');
-        const getConfigDoc = (uid) => doc(db, ...getUserRoot(uid).split('/').filter(Boolean), 'config', 'settings');
 
-        // --- ATTACH GLOBAL FUNCTIONS TO WINDOW IMMEDIATELY ---
-        const showToast = (msg) => {
+        // --- ATTACH GLOBAL FUNCTIONS TO WINDOW EARLY ---
+        window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
             toast.innerText = msg; toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('opacity-100'), 10);
             setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
         };
-        window.showToast = showToast;
 
-        const requireAuth = () => {
+        window.requireAuth = () => {
             if (!currentUser) {
                 window.showToast('로그인이 필요한 기능입니다.');
                 return false;
             }
             return true;
         };
-        window.requireAuth = requireAuth;
 
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); window.showToast('로그아웃 완료'); } catch (e) {} };
@@ -382,18 +375,26 @@
             if (kD) kD.innerText = '≈ ' + Math.round(totalUSD * rate).toLocaleString('ko-KR') + ' 원';
         };
 
+        // ✨ LED 추천 로직: 가로폭 2개 x 세로폭 2개 = 총 4개 추천
         window.updateLedWallRecs = () => {
             const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0, hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
 
-            const recs = [
-                { w: Math.floor(wIn / 320), h: Math.floor(hIn / 160) }, // 가로 하향, 세로 하향
-                { w: Math.floor(wIn / 320), h: Math.ceil(hIn / 160) },  // 가로 하향, 세로 상향
-                { w: Math.ceil(wIn / 320), h: Math.floor(hIn / 160) },  // 가로 상향, 세로 하향
-                { w: Math.ceil(wIn / 320), h: Math.ceil(hIn / 160) }   // 가로 상향, 세로 상향
-            ];
+            const wOpts = [Math.floor(wIn / 320) || 1, Math.ceil(wIn / 320) || 1];
+            const hOpts = [Math.floor(hIn / 160) || 1, Math.ceil(hIn / 160) || 1];
+            
+            // 중복 제거 및 정렬
+            const uniqueW = [...new Set(wOpts)].sort((a,b) => a-b);
+            const uniqueH = [...new Set(hOpts)].sort((a,b) => a-b);
+            
+            // 4개 조합 만들기 (가로 작은거 2개, 가로 큰거 2개)
+            let combinations = [];
+            combinations.push({ w: uniqueW[0], h: uniqueH[0] });
+            combinations.push({ w: uniqueW[0], h: uniqueH[1] || uniqueH[0] });
+            combinations.push({ w: uniqueW[1] || uniqueW[0], h: uniqueH[0] });
+            combinations.push({ w: uniqueW[1] || uniqueW[0], h: uniqueH[1] || uniqueH[0] });
 
-            recs.forEach((rec, idx) => {
+            combinations.forEach((rec, idx) => {
                 const rw = rec.w * 320, rh = rec.h * 160;
                 const sizeEl = document.getElementById(`led-rec${idx+1}-size`);
                 const countEl = document.getElementById(`led-rec${idx+1}-count`);
@@ -411,7 +412,7 @@
             if (w > 0 && h > 0 && diagD) diagD.innerText = (Math.sqrt(w*w + h*h) / 25.4).toFixed(1) + " inch";
         };
 
-        // --- Render Business Tools ---
+        // --- Render Business Tools (LED Recommender + Integrated Ratio Calc) ---
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
             if (!container) return; container.innerHTML = ''; if (!currentUser) return;
@@ -428,18 +429,28 @@
             }
             if (toolsVisibility.showLedCalc) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full relative group';
-                div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button>
-                    <div class="flex items-center gap-2 mb-4 border-b border-gray-50 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 (320x160)</h3></div>
+                div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button>
+                    <div class="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 & 16:9 계산기</h3></div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="flex flex-col gap-4 bg-gray-50 p-3 rounded-xl border border-dashed border-gray-200 md:col-span-1">
-                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-tight">사이즈 입력 (mm)</p>
-                            <div class="flex flex-col gap-3">
-                                <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">가로 (W)</label><input type="number" id="led-wall-w" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600"></div>
-                                <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">세로 (H)</label><input type="number" id="led-wall-h" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600"></div>
+                        <div class="flex flex-col gap-4 md:col-span-1">
+                            <div class="bg-gray-50 p-3 rounded-xl border border-dashed border-gray-200">
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-tight mb-2">사이즈 입력 (mm)</p>
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500">가로 (W)</label><input type="number" id="led-wall-w" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600 outline-none"></div>
+                                    <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500">세로 (H)</label><input type="number" id="led-wall-h" oninput="window.updateLedWallRecs()" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600 outline-none"></div>
+                                </div>
+                            </div>
+                            <div class="bg-green-50/50 p-3 rounded-xl border border-dashed border-green-200">
+                                <p class="text-[10px] font-black text-green-600 uppercase tracking-tight mb-2">16:9 비율 계산</p>
+                                <div class="grid grid-cols-2 gap-2 mb-2">
+                                    <input type="number" id="led-ratio-w" placeholder="W" oninput="window.calculate169Ratio('W')" class="w-full p-1.5 bg-white border border-gray-200 rounded text-xs font-bold text-green-600">
+                                    <input type="number" id="led-ratio-h" placeholder="H" oninput="window.calculate169Ratio('H')" class="w-full p-1.5 bg-white border border-gray-200 rounded text-xs font-bold text-green-600">
+                                </div>
+                                <div id="led-ratio-diag" class="bg-green-600 text-white text-[10px] font-black py-1 rounded text-center shadow-sm">0.0 inch</div>
                             </div>
                         </div>
                         <div class="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-                            ${[1,2,3,4].map(i => `<div class="bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center">
+                            ${[1,2,3,4].map(i => `<div class="bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center flex flex-col justify-center">
                                 <p class="text-[9px] font-bold text-gray-400 mb-1">추천 ${i}</p>
                                 <div class="text-[10px] font-black text-gray-700" id="led-rec${i}-size">-</div>
                                 <div class="text-[8px] font-bold text-blue-500 mt-1" id="led-rec${i}-count">-</div>
@@ -447,46 +458,29 @@
                             </div>`).join('')}
                         </div>
                     </div>`;
-                container.appendChild(div);
-            }
-            if (toolsVisibility.showLedRatio) {
-                const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full xl:w-max relative group';
-                div.innerHTML = `<button onclick="window.hideTool('ledratio')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button>
-                    <div class="flex items-center gap-2 mb-3"><i class="fas fa-expand-arrows-alt text-green-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">16:9 자동 비율 계산기</h3></div>
-                    <div class="flex items-center gap-4">
-                        <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">가로 (mm)</label><input type="number" id="led-ratio-w" oninput="window.calculate169Ratio('W')" class="w-24 p-2 border border-gray-200 rounded-lg text-xs font-bold text-green-600"></div>
-                        <span class="mt-4 text-gray-300">:</span>
-                        <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-500 mb-1">세로 (mm)</label><input type="number" id="led-ratio-h" oninput="window.calculate169Ratio('H')" class="w-24 p-2 border border-gray-200 rounded-lg text-xs font-bold text-green-600"></div>
-                        <div class="bg-green-600 px-4 py-2 rounded-lg text-center shadow-sm ml-2">
-                            <label class="text-[8px] font-bold text-white/70 block mb-0.5">Diagonal</label>
-                            <div id="led-ratio-diag" class="text-xs font-black text-white">0.0 inch</div>
-                        </div>
-                    </div>`;
-                container.appendChild(div);
+                container.appendChild(ledDiv);
             }
         };
 
         window.hideTool = async (name) => {
-            if (!requireAuth()) return;
+            if (!window.requireAuth()) return;
             if (name === 'calculator') toolsVisibility.showCalculator = false;
             else if (name === 'fedex') toolsVisibility.showFedEx = false;
             else if (name === 'ledcalc') toolsVisibility.showLedCalc = false;
-            else if (name === 'ledratio') toolsVisibility.showLedRatio = false;
-            await setDoc(getConfigDoc(currentUser.uid), { tools: toolsVisibility }, { merge: true });
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { tools: toolsVisibility }, { merge: true });
         };
 
         window.updateToolsVisibility = async () => {
-            if (!requireAuth()) return;
+            if (!window.requireAuth()) return;
             toolsVisibility = { 
                 showCalculator: document.getElementById('toggle-calculator').checked, 
                 showFedEx: document.getElementById('toggle-fedex').checked, 
-                showLedCalc: document.getElementById('toggle-ledcalc').checked,
-                showLedRatio: document.getElementById('toggle-ledratio').checked
+                showLedCalc: document.getElementById('toggle-ledcalc').checked 
             };
-            await setDoc(getConfigDoc(currentUser.uid), { tools: toolsVisibility }, { merge: true });
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { tools: toolsVisibility }, { merge: true });
         };
 
-        // --- Sticky Notes Logic ---
+        // --- Sticky Notes ---
         window.initStickyDrag = (e, id) => {
             if (e.target.closest('.color-dot') || e.target.closest('button')) return;
             e.preventDefault(); window.getSelection()?.removeAllRanges();
@@ -528,13 +522,77 @@
             });
         };
 
-        // --- Dashboard & MY sites ---
-        window.handleMyDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
+        // --- Auth & Sync ---
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user && !user.isAnonymous) {
+                const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.add('hidden');
+                const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.remove('hidden');
+                const uName = document.getElementById('user-display-name'); if(uName) uName.innerText = user.displayName || user.email.split('@')[0];
+                const uAvatar = document.getElementById('user-avatar'); if(user.photoURL && uAvatar) { uAvatar.src = user.photoURL; uAvatar.classList.remove('hidden'); }
+                startListeners(user.uid);
+            } else {
+                const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.remove('hidden');
+                const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.add('hidden');
+                unsubs.forEach(u => u()); unsubs = []; categories = []; sites = []; mySites = []; stickyNotes = []; toolsVisibility = {showCalculator: false, showFedEx: false, showLedCalc: false};
+                window.render(); window.renderStickyNotes(); window.renderTodos(); window.renderBusinessTools(); window.updateCalendarIframe();
+            }
+        });
+
+        function startListeners(uid) {
+            unsubs.forEach(u => u()); unsubs = [];
+            unsubs.push(onSnapshot(getConfigDoc(uid), (snap) => {
+                if (snap.exists()) {
+                    const d = snap.data(); if (d.categories) categories = d.categories; if (d.calendarId) { calendarId = d.calendarId; window.updateCalendarIframe(); }
+                    if (d.tools) {
+                        toolsVisibility = d.tools;
+                        const tC = document.getElementById('toggle-calculator'); if(tC) tC.checked = !!d.tools.showCalculator;
+                        const tF = document.getElementById('toggle-fedex'); if(tF) tF.checked = !!d.tools.showFedEx;
+                        const tL = document.getElementById('toggle-ledcalc'); if(tL) tL.checked = !!d.tools.showLedCalc;
+                    }
+                    window.render(); window.renderBusinessTools();
+                } else { setDoc(getConfigDoc(uid), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: false, showFedEx: false, showLedCalc: false} }); }
+            }));
+            unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }));
+            unsubs.push(onSnapshot(getMySitesCol(uid), (snap) => { mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); mySites.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderMySites(); window.renderMySitesList(); }));
+            unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }));
+            unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
+        }
+
+        // --- Other Globals ---
+        window.openMySitesManager = () => { if (!window.requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
+        window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
+        window.submitMySite = async () => {
+            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim();
+            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, createdAt: Date.now() });
+            document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
+        };
+        window.addStickyNote = async () => { if (!window.requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', crypto.randomUUID()), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
+        window.deleteStickyNote = async (id) => { if (!window.requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id)); };
+        window.updateStickyNote = async (id, data) => { if (!window.requireAuth()) return; await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id), data); };
+        window.deleteSite = async (id, isMy = false) => { if (!window.requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), isMy ? 'mySites' : 'sites', id)); };
+        window.addCategory = async () => { if (!window.requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(getConfigDoc(currentUser.uid), { categories }, { merge: true }); } };
+        window.openQuickAddModal = (cat) => { if (!window.requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 사이트 추가`; document.getElementById('siteModal').classList.remove('hidden'); };
+        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
+        window.submitSite = async () => {
+            const n = document.getElementById('siteName').value.trim(), u = document.getElementById('siteUrl').value.trim(), cat = document.getElementById('modalCategory').value;
+            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', crypto.randomUUID()), { name: n, url: finalU, category: cat, createdAt: Date.now() });
+            window.closeModal();
+        };
+        window.openCalendarSettings = () => { if (!window.requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
+        window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
+        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); window.closeCalendarModal(); } };
+        window.toggleTodo = async (id, d) => await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id), { done: !d });
+        window.deleteTodo = async (id) => await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id));
+        window.addTodo = async () => { const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', crypto.randomUUID()), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
+        window.handleMyDragStart = (e, idx) => { if (!window.requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
         window.handleMyDrop = async (e, dropIdx) => {
             e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
             if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
                 const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
-                const baseTime = Date.now(); const batch = mySites.map((s, i) => updateDoc(doc(getMySitesCol(currentUser.uid), s.id), { createdAt: baseTime + i }));
+                const baseTime = Date.now(); const batch = mySites.map((s, i) => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', s.id), { createdAt: baseTime + i }));
                 await Promise.all(batch);
             }
         };
@@ -557,73 +615,11 @@
                 m.appendChild(sec);
             });
         };
-
-        // --- Modals ---
-        window.openMySitesManager = () => { if (!requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
-        window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
-        window.submitMySite = async () => {
-            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim();
-            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(getMySitesCol(currentUser.uid)), { name: n, url: finalU, createdAt: Date.now() });
-            document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
+        window.renderTodos = () => {
+            const l = document.getElementById('todoList'); if (!l) return;
+            document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
+            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
-        window.addStickyNote = async () => { if (!requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(getStickyCol(currentUser.uid)), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
-        window.deleteStickyNote = async (id) => { if (!requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(getStickyCol(currentUser.uid), id)); };
-        window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(currentUser.uid), id), data); };
-        window.deleteSite = async (id, isMy = false) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(isMy ? getMySitesCol(currentUser.uid) : getSitesCol(currentUser.uid), id)); };
-        window.addCategory = async () => { if (!requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(getConfigDoc(currentUser.uid), { categories }, { merge: true }); } };
-        window.openQuickAddModal = (cat) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 사이트 추가`; document.getElementById('siteModal').classList.remove('hidden'); };
-        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
-        window.submitSite = async () => {
-            const n = document.getElementById('siteName').value.trim(), u = document.getElementById('siteUrl').value.trim(), cat = document.getElementById('modalCategory').value;
-            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(getSitesCol(currentUser.uid)), { name: n, url: finalU, category: cat, createdAt: Date.now() });
-            window.closeModal();
-        };
-        window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
-        window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
-        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); window.closeCalendarModal(); } };
-        window.toggleTodo = async (id, d) => await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !d });
-        window.deleteTodo = async (id) => await deleteDoc(doc(getTodosCol(currentUser.uid), id));
-        window.addTodo = async () => { const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
-
-        // --- Firebase Handlers ---
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user && !user.isAnonymous) {
-                const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.add('hidden');
-                const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.remove('hidden');
-                const uName = document.getElementById('user-display-name'); if(uName) uName.innerText = user.displayName || user.email.split('@')[0];
-                const uAvatar = document.getElementById('user-avatar'); if(user.photoURL && uAvatar) { uAvatar.src = user.photoURL; uAvatar.classList.remove('hidden'); }
-                startListeners(user.uid);
-            } else {
-                const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.remove('hidden');
-                const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.add('hidden');
-                unsubs.forEach(u => u()); unsubs = []; categories = []; sites = []; mySites = []; stickyNotes = []; toolsVisibility = {showCalculator: false, showFedEx: false, showLedCalc: false, showLedRatio: false};
-                window.render(); window.renderStickyNotes(); window.renderBusinessTools(); window.updateCalendarIframe();
-            }
-        });
-
-        function startListeners(uid) {
-            unsubs.forEach(u => u()); unsubs = [];
-            unsubs.push(onSnapshot(getConfigDoc(uid), (snap) => {
-                if (snap.exists()) {
-                    const d = snap.data(); if (d.categories) categories = d.categories; if (d.calendarId) { calendarId = d.calendarId; window.updateCalendarIframe(); }
-                    if (d.tools) {
-                        toolsVisibility = d.tools;
-                        const tC = document.getElementById('toggle-calculator'); if(tC) tC.checked = !!d.tools.showCalculator;
-                        const tF = document.getElementById('toggle-fedex'); if(tF) tF.checked = !!d.tools.showFedEx;
-                        const tL = document.getElementById('toggle-ledcalc'); if(tL) tL.checked = !!d.tools.showLedCalc;
-                        const tR = document.getElementById('toggle-ledratio'); if(tR) tR.checked = !!d.tools.showLedRatio;
-                    }
-                    window.render(); window.renderBusinessTools();
-                } else { setDoc(getConfigDoc(uid), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: false, showFedEx: false, showLedCalc: false, showLedRatio: false} }); }
-            }));
-            unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }));
-            unsubs.push(onSnapshot(getMySitesCol(uid), (snap) => { mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); mySites.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderMySites(); window.renderMySitesList(); }));
-            unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }));
-            unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
-        }
 
         // --- Final Execution ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
