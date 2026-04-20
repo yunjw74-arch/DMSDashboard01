@@ -214,14 +214,14 @@
                 </div>
             </div>
 
-            <!-- 동적 도구 영역 -->
+            <!-- 비즈니스 도구 컨테이너 -->
             <div id="business-tools-container" class="mt-6 flex flex-col gap-4"></div>
         </div>
     </div>
 
     <!-- 통합 관리 모달 -->
     <div id="mySitesManagerModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
-        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-md border flex flex-col max-h-[85vh]">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-black text-gray-800">Quick Access 관리</h3>
                 <button onclick="window.closeMySitesManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
@@ -259,7 +259,7 @@
         </div>
     </div>
 
-    <!-- 사이트 추가 모달 -->
+    <!-- 일반 사이트 추가 모달 -->
     <div id="siteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-sm:max-w-sm border">
             <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">사이트 추가</h3>
@@ -276,7 +276,7 @@
     </div>
 
     <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
-        <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-md border">
+        <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-w-md border">
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
             <input type="text" id="calendarSrcInput" placeholder="Google Calendar ID" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
             <div class="flex justify-end gap-2 mt-6">
@@ -307,6 +307,7 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
+        // --- Core Variables ---
         let currentUser = null;
         let sites = [], categories = [], mySites = [], todos = [], stickyNotes = [], unsubs = [];
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
@@ -315,7 +316,7 @@
 
         const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
 
-        // --- GLOBAL FUNCTIONS ---
+        // --- GLOBAL FUNCTIONS - DEFINED EARLY FOR RELIABILITY ---
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
@@ -355,7 +356,7 @@
             } catch (e) {}
         };
 
-        // --- Business Logic ---
+        // --- Core Business Logics ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
             const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
@@ -379,21 +380,32 @@
             const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0, hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
 
+            const wLow = Math.floor(wIn / 320) || 1, wHigh = Math.ceil(wIn / 320) || 1;
+            const hLow = Math.floor(hIn / 160) || 1, hHigh = Math.ceil(hIn / 160) || 1;
+            
             const combinations = [
-                { w: Math.floor(wIn / 320) || 1, h: Math.floor(hIn / 160) || 1 },
-                { w: Math.floor(wIn / 320) || 1, h: Math.ceil(hIn / 160) || 1 },
-                { w: Math.ceil(wIn / 320) || 1,  h: Math.floor(hIn / 160) || 1 },
-                { w: Math.ceil(wIn / 320) || 1,  h: Math.ceil(hIn / 160) || 1 }
+                { w: wLow, h: hLow },
+                { w: wLow, h: hHigh },
+                { w: wHigh, h: hLow },
+                { w: wHigh, h: hHigh }
             ];
 
             combinations.forEach((rec, idx) => {
                 const rw = rec.w * 320, rh = rec.h * 160;
+                const totalModules = rec.w * rec.h;
                 const sizeEl = document.getElementById(`led-rec${idx+1}-size`);
                 const countEl = document.getElementById(`led-rec${idx+1}-count`);
                 const inchEl = document.getElementById(`led-rec${idx+1}-inch`);
+                const pwrEl = document.getElementById(`led-rec${idx+1}-pwr`);
+                
                 if(sizeEl) sizeEl.innerText = `${rw} x ${rh} mm`;
-                if(countEl) countEl.innerText = `${rec.w}W x ${rec.h}H (총 ${rec.w * rec.h}장)`;
+                if(countEl) countEl.innerText = `${rec.w}W x ${rec.h}H (총 ${totalModules}장)`;
                 if(inchEl) inchEl.innerText = (Math.sqrt(rw*rw + rh*rh) / 25.4).toFixed(1) + " inch";
+                if(pwrEl) {
+                    const maxKw = (totalModules * 20.5) / 1000;
+                    const avgKw = maxKw * 0.3;
+                    pwrEl.innerText = `Max ${maxKw.toFixed(2)}kW / Avg ${avgKw.toFixed(2)}kW`;
+                }
             });
         };
 
@@ -421,7 +433,6 @@
                 container.appendChild(div);
             }
             if (toolsVisibility.showLedCalc) {
-                // FIXED BUG HERE: changed `ledDiv` to `div` to ensure rendering correctly
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full relative group';
                 div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button>
                     <div class="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 추천기 & 16:9 계산기 (320x160)</h3></div>
@@ -449,6 +460,7 @@
                                 <div class="text-[10px] font-black text-gray-700" id="led-rec${i}-size">-</div>
                                 <div class="text-[8px] font-bold text-blue-500 mt-1" id="led-rec${i}-count">-</div>
                                 <div class="text-[9px] font-black text-blue-600 mt-1 bg-blue-50 py-0.5 rounded" id="led-rec${i}-inch">0.0 inch</div>
+                                <div class="text-[8px] font-bold text-red-500 mt-1" id="led-rec${i}-pwr">-</div>
                             </div>`).join('')}
                         </div>
                     </div>`;
@@ -474,7 +486,7 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { tools: toolsVisibility }, { merge: true });
         };
 
-        // --- Auth & Listener ---
+        // --- Event Listeners ---
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user && !user.isAnonymous) {
@@ -519,7 +531,6 @@
             unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }, (err) => {}));
         }
 
-        // --- Interaction Handlers ---
         window.openMySitesManager = () => { if (!window.requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
         window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
         window.submitMySite = async () => {
@@ -618,6 +629,9 @@
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
         document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
+        
+        // Initial Fetch
+        window.fetchExchangeRate(); 
         setInterval(window.fetchExchangeRate, 60000);
         window.updateCalendarIframe();
     </script>
