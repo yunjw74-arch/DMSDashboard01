@@ -38,7 +38,6 @@
             min-height: 150px;
             background-color: #fff9c4;
         }
-        /* 드래그 중 텍스트 선택 방지 */
         body.dragging-active {
             user-select: none !important;
             -webkit-user-select: none !important;
@@ -98,8 +97,8 @@
     <div id="sticky-notes-container" class="fixed inset-0 pointer-events-none overflow-visible" style="z-index: 999;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
-        <!-- 상단 고정 영역 -->
-        <div class="sticky top-0 z-40 bg-[#f8f9fa] border-b border-gray-200">
+        <!-- 상단 고정 영역 (Z-index 상향으로 클릭 이슈 해결) -->
+        <div class="sticky top-0 z-[1100] bg-[#f8f9fa] border-b border-gray-200">
             <header class="pt-4 md:pt-6 pb-2 flex flex-col xl:flex-row items-center justify-between gap-4">
                 <div class="flex flex-wrap justify-start items-center gap-3 w-full flex-1 ml-2">
                     <form action="https://search.naver.com/search.naver" method="get" target="_blank" class="flex items-center relative flex-1 min-w-[160px] max-w-[330px]" onsubmit="setTimeout(() => this.reset(), 100)">
@@ -222,7 +221,7 @@
 
     <!-- 나만의 사이트 및 비즈니스 도구 통합 관리 모달 -->
     <div id="mySitesManagerModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
-        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border flex flex-col max-h-[85vh]">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-md border flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-black text-gray-800">Quick Access 관리</h3>
                 <button onclick="window.closeMySitesManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
@@ -231,9 +230,9 @@
             <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100">
                 <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">새 바로가기 추가</p>
                 <div class="grid grid-cols-1 gap-3">
-                    <input type="text" id="newMyName" placeholder="이름" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
-                    <input type="text" id="newMyUrl" placeholder="URL" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
-                    <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700">추가하기</button>
+                    <input type="text" id="newMyName" placeholder="이름 (예: Gmail)" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="newMyUrl" placeholder="URL (예: mail.google.com)" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors">추가하기</button>
                 </div>
             </div>
             
@@ -308,9 +307,9 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // --- Scoped Variables ---
+        // --- Core Scoped Variables ---
+        let currentUser = null;
         let sites = [], categories = [], mySites = [], todos = [], stickyNotes = [], unsubs = [];
-        let currentUser = null; // Fix: Declaration added to avoid ReferenceError
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
         let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
         let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
@@ -322,7 +321,24 @@
         const getStickyCol = (uid) => collection(db, getUserRoot(uid), 'stickyNotes');
         const getConfigDoc = (uid) => doc(db, getUserRoot(uid), 'config', 'settings');
 
-        // --- Shared Core Functions (Attached to window) ---
+        // --- Core Helpers (Attached to Window) ---
+        window.showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.innerText = msg; toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('opacity-100'), 10);
+            setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
+        };
+
+        const requireAuth = () => {
+            if (!currentUser) {
+                window.showToast('로그인이 필요한 기능입니다.');
+                return false;
+            }
+            return true;
+        };
+        window.requireAuth = requireAuth;
+
         window.fetchExchangeRate = async () => {
             try {
                 const res = await fetch('https://api.manana.kr/exchange/rate.json'), data = await res.json(), usd = data.find(d => d.name === 'USDKRW=X');
@@ -379,18 +395,10 @@
             }
         };
 
-        window.showToast = (msg) => {
-            const toast = document.getElementById('toast');
-            if (!toast) return;
-            toast.innerText = msg; toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('opacity-100'), 10);
-            setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
-        };
-
-        // --- Business Logic ---
+        // --- Business Rendering ---
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
-            if (!container) return; container.innerHTML = ''; if (!auth.currentUser) return;
+            if (!container) return; container.innerHTML = ''; if (!currentUser) return;
             if (toolsVisibility.showCalculator) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max relative group';
                 div.innerHTML = `<button onclick="window.hideTool('calculator')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button><div class="flex flex-wrap items-center justify-start gap-4"><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">USD Price</label><input type="number" id="calc-price" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">+</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Shipping</label><input type="number" id="calc-shipping" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex flex-col text-center"><label class="text-[9px] text-blue-500 font-bold uppercase">Total USD</label><div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px]">$ 0.00</div></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Rate</label><input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex items-center gap-2"><div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div><a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm"><span class="text-[#03c75a] font-black text-[15px]">N</span></a></div></div>`;
@@ -413,13 +421,17 @@
             if (name === 'calculator') toolsVisibility.showCalculator = false;
             if (name === 'fedex') toolsVisibility.showFedEx = false;
             if (name === 'ledcalc') toolsVisibility.showLedCalc = false;
-            await setDoc(getConfigDoc(auth.currentUser.uid), { tools: toolsVisibility }, { merge: true });
+            await setDoc(getConfigDoc(currentUser.uid), { tools: toolsVisibility }, { merge: true });
         };
 
         window.updateToolsVisibility = async () => {
             if (!requireAuth()) return;
-            toolsVisibility = { showCalculator: document.getElementById('toggle-calculator').checked, showFedEx: document.getElementById('toggle-fedex').checked, showLedCalc: document.getElementById('toggle-ledcalc').checked };
-            await setDoc(getConfigDoc(auth.currentUser.uid), { tools: toolsVisibility }, { merge: true });
+            toolsVisibility = { 
+                showCalculator: document.getElementById('toggle-calculator').checked, 
+                showFedEx: document.getElementById('toggle-fedex').checked, 
+                showLedCalc: document.getElementById('toggle-ledcalc').checked 
+            };
+            await setDoc(getConfigDoc(currentUser.uid), { tools: toolsVisibility }, { merge: true });
         };
 
         // --- Sticky Notes Logic ---
@@ -453,7 +465,7 @@
             const id = activeDragId; activeDragId = null;
             document.removeEventListener('mousemove', handleStickyMouseMove);
             document.removeEventListener('mouseup', handleStickyMouseUp);
-            await updateDoc(doc(getStickyCol(auth.currentUser.uid), id), { x: fx, y: fy });
+            await updateDoc(doc(getStickyCol(currentUser.uid), id), { x: fx, y: fy });
         }
 
         window.renderStickyNotes = () => {
@@ -468,7 +480,18 @@
             });
         };
 
-        // --- MY Sites & Dashboard ---
+        // --- MY Sites ---
+        window.handleMyDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
+        window.handleMyDrop = async (e, dropIdx) => {
+            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
+            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
+                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
+                const baseTime = Date.now(); 
+                const batch = mySites.map((s, i) => updateDoc(doc(getMySitesCol(currentUser.uid), s.id), { createdAt: baseTime + i }));
+                await Promise.all(batch);
+            }
+        };
+
         window.renderMySites = () => {
             const container = document.getElementById('my-sites-container'); if (!container) return;
             container.innerHTML = mySites.map((s, idx) => `<div class="my-site-item shrink-0" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
@@ -477,6 +500,7 @@
             const list = document.getElementById('my-sites-list'); if (!list) return;
             list.innerHTML = mySites.map((s, idx) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-sm font-bold text-gray-700">${s.name}</span></div><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-trash-alt text-xs"></i></button></div>`).join('');
         };
+
         window.render = () => {
             const m = document.getElementById('dashboard'); m.innerHTML = ''; if (!categories.length) return;
             categories.forEach((cat, i) => {
@@ -487,15 +511,45 @@
                 m.appendChild(sec);
             });
         };
+
         window.renderTodos = () => {
             const l = document.getElementById('todoList'); if (!l) return;
             document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
-            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
+            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
 
-        // --- Auth Implementation ---
+        // --- Modals ---
+        window.openMySitesManager = () => { if (!requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
+        window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
+        window.submitMySite = async () => {
+            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim();
+            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
+            await setDoc(doc(getMySitesCol(currentUser.uid)), { name: n, url: finalU, createdAt: Date.now() });
+            document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
+        };
+        window.addStickyNote = async () => { if (!requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(getStickyCol(currentUser.uid)), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
+        window.deleteStickyNote = async (id) => { if (!requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(getStickyCol(currentUser.uid), id)); };
+        window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(currentUser.uid), id), data); };
+        window.deleteSite = async (id, isMy = false) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(isMy ? getMySitesCol(currentUser.uid) : getSitesCol(currentUser.uid), id)); };
+        window.addCategory = async () => { if (!requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(getConfigDoc(currentUser.uid), { categories }, { merge: true }); } };
+        window.openQuickAddModal = (cat) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 사이트 추가`; document.getElementById('siteModal').classList.remove('hidden'); };
+        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
+        window.submitSite = async () => {
+            const n = document.getElementById('siteName').value.trim(), u = document.getElementById('siteUrl').value.trim(), cat = document.getElementById('modalCategory').value;
+            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
+            await setDoc(doc(getSitesCol(currentUser.uid)), { name: n, url: finalU, category: cat, createdAt: Date.now() });
+            window.closeModal();
+        };
+        window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
+        window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
+        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); window.closeCalendarModal(); } };
+        window.toggleTodo = async (id, d) => await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !d });
+        window.deleteTodo = async (id) => await deleteDoc(doc(getTodosCol(currentUser.uid), id));
+        window.addTodo = async () => { const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
+
+        // --- Firebase Listeners ---
         onAuthStateChanged(auth, (user) => {
-            currentUser = user; // Fixed: Global variable assignment
+            currentUser = user;
             if (user && !user.isAnonymous) {
                 document.getElementById('login-btn').classList.add('hidden'); document.getElementById('user-profile-area').classList.remove('hidden');
                 document.getElementById('user-display-name').innerText = user.displayName || user.email.split('@')[0];
@@ -532,42 +586,8 @@
             unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
         }
 
-        // --- Modals & Globals ---
-        window.openMySitesManager = () => { if (!requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
-        window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
-        window.submitMySite = async () => {
-            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim();
-            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(getMySitesCol(auth.currentUser.uid)), { name: n, url: finalU, createdAt: Date.now() });
-            document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
-        };
-        window.addStickyNote = async () => { if (!requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(getStickyCol(auth.currentUser.uid)), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
-        window.deleteStickyNote = async (id) => { if (!requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(getStickyCol(auth.currentUser.uid), id)); };
-        window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(auth.currentUser.uid), id), data); };
-        window.deleteSite = async (id, isMy = false) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(isMy ? getMySitesCol(auth.currentUser.uid) : getSitesCol(auth.currentUser.uid), id)); };
-        window.addCategory = async () => { if (!requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(getConfigDoc(auth.currentUser.uid), { categories }, { merge: true }); } };
-        window.openQuickAddModal = (cat) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 사이트 추가`; document.getElementById('siteModal').classList.remove('hidden'); };
-        window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
-        window.submitSite = async () => {
-            const n = document.getElementById('siteName').value.trim(), u = document.getElementById('siteUrl').value.trim(), cat = document.getElementById('modalCategory').value;
-            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(getSitesCol(auth.currentUser.uid)), { name: n, url: finalU, category: cat, createdAt: Date.now() });
-            window.closeModal();
-        };
-        window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
-        window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
-        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(auth.currentUser.uid), { calendarId: v }, { merge: true }); window.closeCalendarModal(); } };
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); window.showToast('로그아웃 완료'); } catch (e) {} };
-        window.handleMyDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
-        window.handleMyDrop = async (e, dropIdx) => {
-            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
-            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && auth.currentUser) {
-                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
-                const baseTime = Date.now(); const batch = mySites.map((s, i) => updateDoc(doc(getMySitesCol(auth.currentUser.uid), s.id), { createdAt: baseTime + i }));
-                await Promise.all(batch);
-            }
-        };
 
         // --- Final Execution ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
