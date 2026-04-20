@@ -10,12 +10,13 @@
     <style>
         body { background-color: #f8f9fa; position: relative; min-height: 100vh; overflow-x: hidden; }
         .site-card:hover .delete-btn { opacity: 1; }
+        .my-site-item:hover .my-delete-btn { opacity: 1; }
         .category-header:hover .edit-tools { opacity: 1; }
         .font-nanum-ac { font-family: 'NanumSquareAc', sans-serif; }
         .category-section { transition: all 0.2s ease; }
         .site-card { transition: transform 0.2s, background-color 0.2s; z-index: 1; }
         .site-card:hover { z-index: 50; } 
-        .delete-btn { transition: opacity 0.2s; pointer-events: auto; }
+        .delete-btn, .my-delete-btn { transition: opacity 0.2s; pointer-events: auto; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -37,6 +38,7 @@
             min-height: 150px;
             background-color: #fff9c4;
         }
+        /* 드래그 중 텍스트 선택 방지 */
         body.dragging-active {
             user-select: none !important;
             -webkit-user-select: none !important;
@@ -87,13 +89,12 @@
         
         .my-site-item { cursor: grab; }
         .my-site-item:active { cursor: grabbing; }
-
-        /* Module Transition */
         .tool-module { transition: all 0.3s ease; }
     </style>
 </head>
 <body class="px-4 md:px-10 pb-20 font-nanum-ac text-black">
 
+    <!-- 포스트잇 컨테이너 -->
     <div id="sticky-notes-container" class="fixed inset-0 pointer-events-none overflow-visible" style="z-index: 999;"></div>
 
     <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
@@ -215,7 +216,6 @@
                 </div>
             </div>
 
-            <!-- ✨ 동적으로 렌더링될 비즈니스 도구 영역 -->
             <div id="business-tools-container" class="mt-6 flex flex-col gap-4"></div>
         </div>
     </div>
@@ -228,32 +228,35 @@
                 <button onclick="window.closeMySitesManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </div>
             
-            <!-- 비즈니스 도구 활성화 설정 추가 -->
-            <div class="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-100">
-                <p class="text-[11px] font-bold text-blue-600 mb-3 uppercase tracking-wider">비즈니스 도구 설정</p>
-                <div class="flex flex-col gap-2">
-                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                        <input type="checkbox" id="toggle-calculator" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="text-sm font-bold text-gray-700">수입 원가 계산기</span>
-                    </label>
-                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                        <input type="checkbox" id="toggle-fedex" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="text-sm font-bold text-gray-700">FedEx 운임 시뮬레이터</span>
-                    </label>
-                </div>
-            </div>
-
             <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100">
                 <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">새 바로가기 추가</p>
                 <div class="grid grid-cols-1 gap-3">
-                    <input type="text" id="newMyName" placeholder="이름 (예: Gmail)" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
-                    <input type="text" id="newMyUrl" placeholder="URL (예: mail.google.com)" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
+                    <input type="text" id="newMyName" placeholder="이름" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
+                    <input type="text" id="newMyUrl" placeholder="URL" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
                     <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700">추가하기</button>
                 </div>
             </div>
             
             <p class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-wider">현재 등록된 사이트 (드래그 순서 변경)</p>
-            <div id="my-sites-list" class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar"></div>
+            <div id="my-sites-list" class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar mb-6"></div>
+
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shrink-0">
+                <p class="text-[11px] font-bold text-blue-600 mb-3 uppercase tracking-wider">비즈니스 도구 설정</p>
+                <div class="flex flex-col gap-2">
+                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                        <input type="checkbox" id="toggle-calculator" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
+                        <span class="text-sm font-bold text-gray-700">수입 원가 계산기</span>
+                    </label>
+                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                        <input type="checkbox" id="toggle-fedex" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
+                        <span class="text-sm font-bold text-gray-700">FedEx 운임 시뮬레이터</span>
+                    </label>
+                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                        <input type="checkbox" id="toggle-ledcalc" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
+                        <span class="text-sm font-bold text-gray-700">LED 모듈 계산기</span>
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -273,7 +276,6 @@
         </div>
     </div>
 
-    <!-- 캘린더 설정 모달 -->
     <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-w-md border">
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
@@ -306,12 +308,12 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        let sites = []; let categories = []; let mySites = [];
+        // --- Scoped Variables ---
+        let sites = [], categories = [], mySites = [], todos = [], stickyNotes = [], unsubs = [];
+        let currentUser = null; // Fix: Declaration added to avoid ReferenceError
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
-        let todos = []; let stickyNotes = []; let currentUser = null; let unsubs = [];
-        let toolsVisibility = { showCalculator: true, showFedEx: true };
-        let activeDragId = null; let dragStartPos = { x: 0, y: 0 }; let noteStartPos = { x: 0, y: 0 };
-        let dragMyIdx = -1;
+        let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
+        let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
 
         const getUserRoot = (uid) => `artifacts/${appId}/users/${uid}`;
         const getMySitesCol = (uid) => collection(db, getUserRoot(uid), 'mySites');
@@ -320,7 +322,55 @@
         const getStickyCol = (uid) => collection(db, getUserRoot(uid), 'stickyNotes');
         const getConfigDoc = (uid) => doc(db, getUserRoot(uid), 'config', 'settings');
 
-        // --- Core Utils ---
+        // --- Shared Core Functions (Attached to window) ---
+        window.fetchExchangeRate = async () => {
+            try {
+                const res = await fetch('https://api.manana.kr/exchange/rate.json'), data = await res.json(), usd = data.find(d => d.name === 'USDKRW=X');
+                if (usd) {
+                    const sendRate = usd.rate + 9.8, disp = document.getElementById('exchange-rate-display');
+                    if (disp) disp.innerHTML = `<a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="text-xs font-bold text-gray-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm">1 USD = <span class="text-red-500">${sendRate.toLocaleString('ko-KR', {minimumFractionDigits: 2})}</span> 원</a>`;
+                    const input = document.getElementById('calc-rate-input');
+                    if (input) { input.value = sendRate.toFixed(2); window.calculateTotal(); }
+                }
+            } catch (e) {}
+        };
+
+        window.calculateTotal = () => {
+            const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
+            const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
+            const usdD = document.getElementById('calc-total-usd'), krwD = document.getElementById('calc-total-display');
+            if (usdD) usdD.innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (krwD) krwD.innerText = Math.round(totalKRW).toLocaleString('ko-KR') + ' 원';
+            window.calculateFedEx();
+        };
+
+        window.calculateFedEx = () => {
+            const L = parseFloat(document.getElementById('fedex-l')?.value) || 0, W = parseFloat(document.getElementById('fedex-w')?.value) || 0, H = parseFloat(document.getElementById('fedex-h')?.value) || 0, actualWt = parseFloat(document.getElementById('fedex-weight')?.value) || 0;
+            const dimWt = (L * W * H) / 5000, chargeWt = Math.max(dimWt, actualWt), rate = parseFloat(document.getElementById('calc-rate-input')?.value) || 1450, totalUSD = chargeWt * 12.5 * 1.28;
+            const dD = document.getElementById('fedex-dim-wt-display'), cD = document.getElementById('fedex-charge-wt'), uD = document.getElementById('fedex-usd'), kD = document.getElementById('fedex-krw');
+            if (dD) dD.innerText = dimWt.toFixed(2) + ' kg';
+            if (cD) cD.innerText = chargeWt.toFixed(2) + ' kg';
+            if (uD) uD.innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (kD) kD.innerText = '≈ ' + Math.round(totalUSD * rate).toLocaleString('ko-KR') + ' 원';
+        };
+
+        window.calculateLedRatio = (type) => {
+            const wI = document.getElementById('led-w-mm'), hI = document.getElementById('led-h-mm'), diagD = document.getElementById('led-diag-inch');
+            let w = parseFloat(wI.value) || 0, h = parseFloat(hI.value) || 0;
+            if (type === 'W' && w > 0) { h = w * (9/16); hI.value = h.toFixed(0); } else if (type === 'H' && h > 0) { w = h * (16/9); wI.value = w.toFixed(0); }
+            if (w > 0 && h > 0) { diagD.innerText = (Math.sqrt(w*w + h*h) / 25.4).toFixed(1) + " inch"; window.updateLedModuleRecs(w, h); }
+        };
+
+        window.updateLedModuleRecs = (w, h) => {
+            const r1s = document.getElementById('led-rec-1-size'), r1c = document.getElementById('led-rec-1-count'), r2s = document.getElementById('led-rec-2-size'), r2c = document.getElementById('led-rec-2-count');
+            const cW1 = Math.round(w / 320), cH1 = Math.round(h / 160);
+            if(r1s) r1s.innerText = `${cW1 * 320} x ${cH1 * 160} mm`; 
+            if(r1c) r1c.innerText = `${cW1}W x ${cH1}H (총 ${cW1 * cH1}장)`;
+            const base = Math.round(cW1 / 8) || 1;
+            if(r2s) r2s.innerText = `${base * 8 * 320} x ${base * 9 * 160} mm`; 
+            if(r2c) r2c.innerText = `${base * 8}W x ${base * 9}H (총 ${base * 8 * base * 9}장)`;
+        };
+
         window.updateCalendarIframe = () => {
             const iframe = document.getElementById('calendar-iframe-month');
             if (iframe) {
@@ -331,12 +381,46 @@
 
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
+            if (!toast) return;
             toast.innerText = msg; toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('opacity-100'), 10);
             setTimeout(() => { toast.classList.remove('opacity-100'); setTimeout(() => toast.classList.add('hidden'), 300); }, 2000);
         };
 
-        const requireAuth = () => { if (!currentUser) { window.showToast('로그인이 필요한 기능입니다.'); return false; } return true; };
+        // --- Business Logic ---
+        window.renderBusinessTools = () => {
+            const container = document.getElementById('business-tools-container');
+            if (!container) return; container.innerHTML = ''; if (!auth.currentUser) return;
+            if (toolsVisibility.showCalculator) {
+                const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max relative group';
+                div.innerHTML = `<button onclick="window.hideTool('calculator')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button><div class="flex flex-wrap items-center justify-start gap-4"><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">USD Price</label><input type="number" id="calc-price" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">+</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Shipping</label><input type="number" id="calc-shipping" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex flex-col text-center"><label class="text-[9px] text-blue-500 font-bold uppercase">Total USD</label><div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px]">$ 0.00</div></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Rate</label><input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex items-center gap-2"><div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div><a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm"><span class="text-[#03c75a] font-black text-[15px]">N</span></a></div></div>`;
+                container.appendChild(div); window.fetchExchangeRate();
+            }
+            if (toolsVisibility.showFedEx) {
+                const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 w-full relative group';
+                div.innerHTML = `<button onclick="window.hideTool('fedex')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button><div class="flex items-center justify-between mb-2"><h3 class="text-[12px] font-extrabold text-gray-800"><i class="fas fa-shipping-fast text-[#4D148C] mr-2"></i>FedEx 운임 시뮬레이터</h3><span class="text-[9px] text-gray-400 font-bold">(L × W × H cm) ÷ 5,000</span></div><div class="flex flex-wrap items-center gap-4"><div class="flex gap-2"><input type="number" id="fedex-l" class="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs" placeholder="L" oninput="window.calculateFedEx()"><input type="number" id="fedex-w" class="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs" placeholder="W" oninput="window.calculateFedEx()"><input type="number" id="fedex-h" class="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs" placeholder="H" oninput="window.calculateFedEx()"></div><div class="w-px h-4 bg-gray-300"></div><input type="number" id="fedex-weight" class="w-24 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs font-bold" placeholder="실 중량" oninput="window.calculateFedEx()"><div class="ml-auto flex items-center gap-4 bg-gray-50 px-4 py-1.5 rounded-xl border border-dashed border-gray-200"><div class="text-center"><span class="text-[9px] text-gray-400 block font-bold">Dim. Wt</span><span id="fedex-dim-wt-display" class="text-xs font-bold text-gray-600">0.00 kg</span></div><div class="text-center"><span class="text-[9px] text-gray-400 block font-bold text-red-500">Chargeable</span><span id="fedex-charge-wt" class="text-xs font-bold text-red-600">0.00 kg</span></div><div class="text-right border-l pl-4"><div id="fedex-usd" class="text-sm font-black text-[#4D148C]">$ 0.00</div><div id="fedex-krw" class="text-[10px] font-bold text-gray-500">≈ 0 원</div></div></div></div>`;
+                container.appendChild(div);
+            }
+            if (toolsVisibility.showLedCalc) {
+                const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 w-full relative group';
+                div.innerHTML = `<button onclick="window.hideTool('ledcalc')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button><div class="flex items-center gap-2 mb-4 border-b border-gray-50 pb-2"><i class="fas fa-th text-blue-500"></i><h3 class="text-[12px] font-extrabold text-gray-800">LED 모듈 계산기 (320x160)</h3></div><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="flex flex-col gap-4 bg-gray-50/50 p-3 rounded-xl border border-dashed border-gray-200"><p class="text-[10px] font-black text-gray-400 uppercase tracking-tight">1. 16:9 비율 및 인치</p><div class="flex items-center gap-3"><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-gray-500 mb-1">가로 (mm)</label><input type="number" id="led-w-mm" oninput="window.calculateLedRatio('W')" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600 outline-none"></div><span class="mt-4 text-gray-300">:</span><div class="flex flex-col flex-1"><label class="text-[9px] font-bold text-gray-500 mb-1">세로 (mm)</label><input type="number" id="led-h-mm" oninput="window.calculateLedRatio('H')" class="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-blue-600 outline-none"></div><div class="flex flex-col flex-1 bg-blue-600 p-2 rounded-lg text-center"><label class="text-[8px] font-bold text-white/70 mb-1">Diagonal</label><div id="led-diag-inch" class="text-xs font-black text-white">0.0 inch</div></div></div></div><div class="flex flex-col gap-3"><p class="text-[10px] font-black text-gray-400 uppercase tracking-tight">2. 모듈 추천 (320x160)</p><div class="flex gap-4"><div class="flex-1 bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center"><p class="text-[9px] font-bold text-gray-400 mb-1">추천 1: 입력값</p><div class="text-[11px] font-black text-gray-700" id="led-rec-1-size">-</div><div class="text-[9px] font-bold text-blue-500 mt-1" id="led-rec-1-count">-</div></div><div class="flex-1 bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center border-l-4 border-l-blue-500"><p class="text-[9px] font-bold text-gray-400 mb-1">추천 2: 16:9 최적</p><div class="text-[11px] font-black text-gray-700" id="led-rec-2-size">-</div><div class="text-[9px] font-bold text-blue-500 mt-1" id="led-rec-2-count">-</div></div></div></div></div>`;
+                container.appendChild(div);
+            }
+        };
+
+        window.hideTool = async (name) => {
+            if (!requireAuth()) return;
+            if (name === 'calculator') toolsVisibility.showCalculator = false;
+            if (name === 'fedex') toolsVisibility.showFedEx = false;
+            if (name === 'ledcalc') toolsVisibility.showLedCalc = false;
+            await setDoc(getConfigDoc(auth.currentUser.uid), { tools: toolsVisibility }, { merge: true });
+        };
+
+        window.updateToolsVisibility = async () => {
+            if (!requireAuth()) return;
+            toolsVisibility = { showCalculator: document.getElementById('toggle-calculator').checked, showFedEx: document.getElementById('toggle-fedex').checked, showLedCalc: document.getElementById('toggle-ledcalc').checked };
+            await setDoc(getConfigDoc(auth.currentUser.uid), { tools: toolsVisibility }, { merge: true });
+        };
 
         // --- Sticky Notes Logic ---
         window.initStickyDrag = (e, id) => {
@@ -369,174 +453,49 @@
             const id = activeDragId; activeDragId = null;
             document.removeEventListener('mousemove', handleStickyMouseMove);
             document.removeEventListener('mouseup', handleStickyMouseUp);
-            await updateDoc(doc(getStickyCol(currentUser.uid), id), { x: fx, y: fy });
+            await updateDoc(doc(getStickyCol(auth.currentUser.uid), id), { x: fx, y: fy });
         }
 
         window.renderStickyNotes = () => {
-            const container = document.getElementById('sticky-notes-container');
-            container.innerHTML = '';
-            const noteColors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
+            const container = document.getElementById('sticky-notes-container'); container.innerHTML = ''; const noteColors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
             stickyNotes.forEach(note => {
-                const el = document.createElement('div');
-                el.id = `note-${note.id}`;
-                el.className = 'sticky-note pointer-events-auto';
-                el.style.left = `${note.x}px`; el.style.top = `${note.y}px`;
-                el.style.width = `${note.width || 220}px`; el.style.height = `${note.height || 220}px`;
-                el.style.backgroundColor = note.color || '#fff9c4';
-                const d = new Date(note.createdAt);
-                const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                const el = document.createElement('div'); el.id = `note-${note.id}`; el.className = 'sticky-note pointer-events-auto'; el.style.left = `${note.x}px`; el.style.top = `${note.y}px`; el.style.width = `${note.width || 220}px`; el.style.height = `${note.height || 220}px`; el.style.backgroundColor = note.color || '#fff9c4';
+                const d = new Date(note.createdAt); const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                 el.innerHTML = `<div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')"><div class="flex gap-1.5">${noteColors.map(c => `<div class="color-dot" style="background:${c}" onclick="window.updateStickyNote('${note.id}', {color: '${c}'})"></div>`).join('')}</div><span class="note-date">${ds}</span><button onclick="window.deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xs"></i></button></div><textarea class="sticky-note-body" placeholder="메모...">${note.text || ''}</textarea>`;
-                const ta = el.querySelector('textarea');
-                ta.onblur = () => { if (ta.value !== note.text) window.updateStickyNote(note.id, { text: ta.value }); };
-                el.onmouseup = async () => { if (!activeDragId) { const nw = el.offsetWidth; const nh = el.offsetHeight; if (Math.abs(nw - (note.width||220)) > 5 || Math.abs(nh - (note.height||220)) > 5) await window.updateStickyNote(note.id, {width:nw, height:nh}); } };
+                const ta = el.querySelector('textarea'); ta.onblur = () => { if (ta.value !== note.text) window.updateStickyNote(note.id, { text: ta.value }); };
+                el.onmouseup = async () => { if (!activeDragId) { const nw = el.offsetWidth, nh = el.offsetHeight; if (Math.abs(nw - (note.width||220)) > 5 || Math.abs(nh - (note.height||220)) > 5) await window.updateStickyNote(note.id, {width:nw, height:nh}); } };
                 container.appendChild(el);
             });
         };
 
-        // --- MY Sites Management ---
-        window.handleMyDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
-        window.handleMyDrop = async (e, dropIdx) => {
-            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
-            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
-                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
-                const baseTime = Date.now();
-                const batch = mySites.map((s, i) => updateDoc(doc(getMySitesCol(currentUser.uid), s.id), { createdAt: baseTime + i }));
-                await Promise.all(batch);
-            }
-        };
-
+        // --- MY Sites & Dashboard ---
         window.renderMySites = () => {
-            const container = document.getElementById('my-sites-container');
-            if (!container) return;
+            const container = document.getElementById('my-sites-container'); if (!container) return;
             container.innerHTML = mySites.map((s, idx) => `<div class="my-site-item shrink-0" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
         };
-
         window.renderMySitesList = () => {
-            const list = document.getElementById('my-sites-list');
-            if (!list) return;
+            const list = document.getElementById('my-sites-list'); if (!list) return;
             list.innerHTML = mySites.map((s, idx) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-sm font-bold text-gray-700">${s.name}</span></div><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-trash-alt text-xs"></i></button></div>`).join('');
         };
-
-        // --- Business Tools Visibility Logic ---
-        window.updateToolsVisibility = async () => {
-            if (!requireAuth()) return;
-            const calc = document.getElementById('toggle-calculator').checked;
-            const fedex = document.getElementById('toggle-fedex').checked;
-            toolsVisibility = { showCalculator: calc, showFedEx: fedex };
-            await setDoc(getConfigDoc(currentUser.uid), { tools: toolsVisibility }, { merge: true });
+        window.render = () => {
+            const m = document.getElementById('dashboard'); m.innerHTML = ''; if (!categories.length) return;
+            categories.forEach((cat, i) => {
+                const sec = document.createElement('div'); sec.className = 'category-section bg-white border border-gray-200 border-b-[4px] border-b-gray-300 shadow-md px-5 py-2.5 rounded-2xl flex flex-col h-full';
+                const cs = sites.filter(s => s.category === cat).sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><button onclick="window.deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center z-10"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
+                sec.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sh}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="window.openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
+                m.appendChild(sec);
+            });
+        };
+        window.renderTodos = () => {
+            const l = document.getElementById('todoList'); if (!l) return;
+            document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
+            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
 
-        window.renderBusinessTools = () => {
-            const container = document.getElementById('business-tools-container');
-            if (!container) return;
-            container.innerHTML = '';
-
-            // 계산기 템플릿
-            if (toolsVisibility.showCalculator) {
-                const calcDiv = document.createElement('div');
-                calcDiv.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max relative group';
-                calcDiv.innerHTML = `
-                    <button onclick="window.hideTool('calculator')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button>
-                    <div class="flex flex-wrap items-center justify-start gap-4">
-                        <div class="flex flex-col"><label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold uppercase">USD Price</label><input type="number" id="calc-price" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" placeholder="0" oninput="window.calculateTotal()"></div>
-                        <span class="text-gray-400 mt-3 font-bold">+</span>
-                        <div class="flex flex-col"><label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold uppercase">Shipping</label><input type="number" id="calc-shipping" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" placeholder="0" oninput="window.calculateTotal()"></div>
-                        <span class="text-gray-400 mt-3 font-bold">×</span>
-                        <div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div>
-                        <span class="text-gray-400 mt-3 font-bold">=</span>
-                        <div class="flex flex-col text-center"><label class="text-[9px] text-blue-500 mb-0.5 font-bold uppercase">Total USD</label><div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px]">$ 0.00</div></div>
-                        <span class="text-gray-400 mt-3 font-bold">×</span>
-                        <div class="flex flex-col"><label class="text-[9px] text-gray-500 mb-0.5 ml-1 font-bold uppercase">Rate</label><input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="window.calculateTotal()"></div>
-                        <span class="text-gray-400 mt-3 font-bold">=</span>
-                        <div class="flex items-center gap-2">
-                            <div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div>
-                            <a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm"><span class="text-[#03c75a] font-black text-[15px]">N</span></a>
-                        </div>
-                    </div>`;
-                container.appendChild(calcDiv);
-                window.fetchExchangeRate(); 
-            }
-
-            // FedEx 템플릿
-            if (toolsVisibility.showFedEx) {
-                const fedexDiv = document.createElement('div');
-                fedexDiv.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 w-full relative group';
-                fedexDiv.innerHTML = `
-                    <button onclick="window.hideTool('fedex')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"><i class="fas fa-times text-xs"></i></button>
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-[12px] font-extrabold text-gray-800"><i class="fas fa-shipping-fast text-[#4D148C] mr-2"></i>FedEx 운임 시뮬레이터</h3>
-                        <span class="text-[9px] text-gray-400 font-bold">(L × W × H cm) ÷ 5,000</span>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-4">
-                        <div class="flex gap-2">
-                            <input type="number" id="fedex-l" class="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs" placeholder="L" oninput="window.calculateFedEx()">
-                            <input type="number" id="fedex-w" class="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs" placeholder="W" oninput="window.calculateFedEx()">
-                            <input type="number" id="fedex-h" class="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs" placeholder="H" oninput="window.calculateFedEx()">
-                        </div>
-                        <div class="w-px h-4 bg-gray-300"></div>
-                        <input type="number" id="fedex-weight" class="w-24 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs font-bold" placeholder="실 중량(kg)" oninput="window.calculateFedEx()">
-                        <div class="ml-auto flex items-center gap-4 bg-gray-50 px-4 py-1.5 rounded-xl border border-dashed border-gray-200">
-                            <div class="text-center"><span class="text-[9px] text-gray-400 block font-bold">Dim. Wt</span><span id="fedex-dim-wt-display" class="text-xs font-bold text-gray-600">0.00 kg</span></div>
-                            <div class="text-center"><span class="text-[9px] text-gray-400 block font-bold text-red-500">Chargeable</span><span id="fedex-charge-wt" class="text-xs font-bold text-red-600">0.00 kg</span></div>
-                            <div class="text-right border-l pl-4"><div id="fedex-usd" class="text-sm font-black text-[#4D148C]">$ 0.00</div><div id="fedex-krw" class="text-[10px] font-bold text-gray-500">≈ 0 원</div></div>
-                        </div>
-                    </div>`;
-                container.appendChild(fedexDiv);
-            }
-        };
-
-        window.hideTool = async (name) => {
-            if (!requireAuth()) return;
-            if (name === 'calculator') toolsVisibility.showCalculator = false;
-            if (name === 'fedex') toolsVisibility.showFedEx = false;
-            await setDoc(getConfigDoc(currentUser.uid), { tools: toolsVisibility }, { merge: true });
-        };
-
-        // --- Business Logic ---
-        window.calculateTotal = () => {
-            const p = parseFloat(document.getElementById('calc-price')?.value) || 0;
-            const s = parseFloat(document.getElementById('calc-shipping')?.value) || 0;
-            const r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
-            const totalUSD = (p + s) * 1.08;
-            const totalKRW = totalUSD * r;
-            const usdDisp = document.getElementById('calc-total-usd');
-            const krwDisp = document.getElementById('calc-total-display');
-            if (usdDisp) usdDisp.innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            if (krwDisp) krwDisp.innerText = Math.round(totalKRW).toLocaleString('ko-KR') + ' 원';
-            window.calculateFedEx();
-        };
-
-        window.calculateFedEx = () => {
-            const L = parseFloat(document.getElementById('fedex-l')?.value) || 0, W = parseFloat(document.getElementById('fedex-w')?.value) || 0, H = parseFloat(document.getElementById('fedex-h')?.value) || 0, actualWt = parseFloat(document.getElementById('fedex-weight')?.value) || 0;
-            const dimWt = (L * W * H) / 5000, chargeWt = Math.max(dimWt, actualWt), rate = parseFloat(document.getElementById('calc-rate-input')?.value) || 1450, totalUSD = chargeWt * 12.5 * 1.28;
-            const dimDisp = document.getElementById('fedex-dim-wt-display');
-            const chargeDisp = document.getElementById('fedex-charge-wt');
-            const usdDisp = document.getElementById('fedex-usd');
-            const krwDisp = document.getElementById('fedex-krw');
-            if (dimDisp) dimDisp.innerText = dimWt.toFixed(2) + ' kg';
-            if (chargeDisp) chargeDisp.innerText = chargeWt.toFixed(2) + ' kg';
-            if (usdDisp) usdDisp.innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            if (krwDisp) krwDisp.innerText = '≈ ' + Math.round(totalUSD * rate).toLocaleString('ko-KR') + ' 원';
-        };
-
-        window.fetchExchangeRate = async () => {
-            try {
-                const res = await fetch('https://api.manana.kr/exchange/rate.json');
-                const data = await res.json();
-                const usd = data.find(d => d.name === 'USDKRW=X');
-                if (usd) {
-                    const sendRate = usd.rate + 9.8;
-                    const disp = document.getElementById('exchange-rate-display');
-                    if (disp) disp.innerHTML = `<a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="text-xs font-bold text-gray-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm">1 USD = <span class="text-red-500">${sendRate.toLocaleString('ko-KR', {minimumFractionDigits: 2})}</span> 원</a>`;
-                    const input = document.getElementById('calc-rate-input');
-                    if (input) { input.value = sendRate.toFixed(2); window.calculateTotal(); }
-                }
-            } catch (e) {}
-        };
-
-        // --- Core Listeners ---
+        // --- Auth Implementation ---
         onAuthStateChanged(auth, (user) => {
-            currentUser = user;
+            currentUser = user; // Fixed: Global variable assignment
             if (user && !user.isAnonymous) {
                 document.getElementById('login-btn').classList.add('hidden'); document.getElementById('user-profile-area').classList.remove('hidden');
                 document.getElementById('user-display-name').innerText = user.displayName || user.email.split('@')[0];
@@ -544,7 +503,7 @@
                 startListeners(user.uid);
             } else {
                 document.getElementById('login-btn').classList.remove('hidden'); document.getElementById('user-profile-area').classList.add('hidden');
-                unsubs.forEach(u => u()); unsubs = []; categories = []; sites = []; mySites = []; stickyNotes = []; toolsVisibility = {showCalculator: true, showFedEx: true};
+                unsubs.forEach(u => u()); unsubs = []; categories = []; sites = []; mySites = []; stickyNotes = []; toolsVisibility = {showCalculator: false, showFedEx: false, showLedCalc: false};
                 window.render(); window.renderStickyNotes(); window.renderTodos(); window.renderBusinessTools(); window.updateCalendarIframe();
             }
         });
@@ -558,9 +517,10 @@
                         toolsVisibility = d.tools;
                         document.getElementById('toggle-calculator').checked = d.tools.showCalculator !== false;
                         document.getElementById('toggle-fedex').checked = d.tools.showFedEx !== false;
+                        document.getElementById('toggle-ledcalc').checked = d.tools.showLedCalc === true;
                     }
                     window.render(); window.renderBusinessTools();
-                } else { setDoc(getConfigDoc(uid), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: true, showFedEx: true} }); }
+                } else { setDoc(getConfigDoc(uid), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: true, showFedEx: true, showLedCalc: false} }); }
             }));
             unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }));
             unsubs.push(onSnapshot(getMySitesCol(uid), (snap) => { 
@@ -572,53 +532,44 @@
             unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
         }
 
-        // --- Globals ---
+        // --- Modals & Globals ---
         window.openMySitesManager = () => { if (!requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
-        window.closeMySitesManager = () => { document.getElementById('mySitesManagerModal').classList.add('hidden'); };
+        window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
         window.submitMySite = async () => {
             const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim();
-            if (!n || !u) return;
-            const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(getMySitesCol(currentUser.uid)), { name: n, url: finalU, createdAt: Date.now() });
+            if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
+            await setDoc(doc(getMySitesCol(auth.currentUser.uid)), { name: n, url: finalU, createdAt: Date.now() });
             document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
         };
-        window.addStickyNote = async () => { if (!requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(getStickyCol(currentUser.uid)), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
-        window.deleteStickyNote = async (id) => { if (!requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(getStickyCol(currentUser.uid), id)); };
-        window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(currentUser.uid), id), data); };
-        window.deleteSite = async (id, isMy = false) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(isMy ? getMySitesCol(currentUser.uid) : getSitesCol(currentUser.uid), id)); };
-        window.addCategory = async () => { if (!requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(getConfigDoc(currentUser.uid), { categories }, { merge: true }); } };
+        window.addStickyNote = async () => { if (!requireAuth()) return; const cascade = (stickyNotes.length % 10) * 25; await setDoc(doc(getStickyCol(auth.currentUser.uid)), { text: '', x: 150 + cascade, y: 150 + cascade, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
+        window.deleteStickyNote = async (id) => { if (!requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(getStickyCol(auth.currentUser.uid), id)); };
+        window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(auth.currentUser.uid), id), data); };
+        window.deleteSite = async (id, isMy = false) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(isMy ? getMySitesCol(auth.currentUser.uid) : getSitesCol(auth.currentUser.uid), id)); };
+        window.addCategory = async () => { if (!requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(getConfigDoc(auth.currentUser.uid), { categories }, { merge: true }); } };
         window.openQuickAddModal = (cat) => { if (!requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 사이트 추가`; document.getElementById('siteModal').classList.remove('hidden'); };
         window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
         window.submitSite = async () => {
             const n = document.getElementById('siteName').value.trim(), u = document.getElementById('siteUrl').value.trim(), cat = document.getElementById('modalCategory').value;
             if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(getSitesCol(currentUser.uid)), { name: n, url: finalU, category: cat, createdAt: Date.now() });
-            closeModal();
+            await setDoc(doc(getSitesCol(auth.currentUser.uid)), { name: n, url: finalU, category: cat, createdAt: Date.now() });
+            window.closeModal();
         };
         window.openCalendarSettings = () => { if (!requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
         window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
-        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(currentUser.uid), { calendarId: v }, { merge: true }); closeCalendarModal(); } };
+        window.saveCalendarSettings = async () => { const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(getConfigDoc(auth.currentUser.uid), { calendarId: v }, { merge: true }); window.closeCalendarModal(); } };
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); window.showToast('로그아웃 완료'); } catch (e) {} };
-        window.toggleTodo = async (id, d) => await updateDoc(doc(getTodosCol(currentUser.uid), id), { done: !d });
-        window.deleteTodo = async (id) => await deleteDoc(doc(getTodosCol(currentUser.uid), id));
-        window.addTodo = async () => { const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(getTodosCol(currentUser.uid)), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
-        window.renderTodos = () => {
-            const l = document.getElementById('todoList'); if (!l) return;
-            document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
-            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
-        };
-        window.render = () => {
-            const m = document.getElementById('dashboard'); m.innerHTML = ''; if (!categories.length) return;
-            categories.forEach((cat, i) => {
-                const sec = document.createElement('div'); sec.className = 'category-section bg-white border border-gray-200 border-b-[4px] border-b-gray-300 shadow-md px-5 py-2.5 rounded-2xl flex flex-col h-full';
-                const cs = sites.filter(s => s.category === cat).sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
-                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><button onclick="window.deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center z-10"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
-                sec.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sh}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="window.openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
-                m.appendChild(sec);
-            });
+        window.handleMyDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
+        window.handleMyDrop = async (e, dropIdx) => {
+            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
+            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && auth.currentUser) {
+                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
+                const baseTime = Date.now(); const batch = mySites.map((s, i) => updateDoc(doc(getMySitesCol(auth.currentUser.uid), s.id), { createdAt: baseTime + i }));
+                await Promise.all(batch);
+            }
         };
 
+        // --- Final Execution ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
