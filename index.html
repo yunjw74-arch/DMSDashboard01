@@ -52,10 +52,12 @@
             align-items: center;
             padding: 0 10px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 10;
         }
         .sticky-note-body {
             flex: 1;
-            padding: 12px;
+            padding: 10px 12px 12px 12px;
             font-family: 'NanumSquareAc', sans-serif;
             font-size: 14px;
             border: none;
@@ -64,6 +66,7 @@
             outline: none;
             line-height: 1.6;
             width: 100%;
+            margin-top: 0; /* 커서가 위로 튀지 않도록 고정 */
         }
         .color-dot {
             width: 14px;
@@ -315,7 +318,7 @@
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
             <input type="text" id="calendarSrcInput" placeholder="Google Calendar ID" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
             <div class="flex justify-end gap-2 mt-6">
-                <button onclick="window.closeCalendarModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
+                <button onclick="closeCalendarModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
                 <button id="saveCalendarSettingsBtn" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm">저장</button>
             </div>
         </div>
@@ -355,7 +358,7 @@
         const getStickyCol = (uid) => collection(db, getUserRoot(uid), 'stickyNotes');
         const getConfigDoc = (uid) => doc(db, getUserRoot(uid), 'config', 'settings');
 
-        // --- Core Utils (Top-level declaration for hoisting) ---
+        // --- Core Utils ---
         window.updateCalendarIframe = () => {
             const iframe = document.getElementById('calendar-iframe-month');
             if (iframe) {
@@ -377,7 +380,7 @@
         window.initStickyDrag = (e, id) => {
             if (e.target.closest('.color-dot') || e.target.closest('button')) return;
             e.preventDefault();
-            window.getSelection()?.removeAllRanges(); // 드래그 시작 시 선택 영역 해제
+            window.getSelection()?.removeAllRanges();
             activeDragId = id;
             const noteEl = document.getElementById(`note-${id}`);
             document.body.classList.add('dragging-active');
@@ -543,7 +546,12 @@
             document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
             window.showToast('추가되었습니다.');
         };
-        window.addStickyNote = async () => { if (!requireAuth()) return; await setDoc(doc(getStickyCol(currentUser.uid)), { text: '', x: 150, y: 150, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
+        // ✨ 포스트잇 생성 위치 오프셋 적용
+        window.addStickyNote = async () => { 
+            if (!requireAuth()) return; 
+            const cascadeOffset = (stickyNotes.length % 10) * 25; // 25px씩 어긋나게 생성
+            await setDoc(doc(getStickyCol(currentUser.uid)), { text: '', x: 150 + cascadeOffset, y: 150 + cascadeOffset, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); 
+        };
         window.deleteStickyNote = async (id) => { if (!requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(getStickyCol(currentUser.uid), id)); };
         window.updateStickyNote = async (id, data) => { if (!requireAuth()) return; await updateDoc(doc(getStickyCol(currentUser.uid), id), data); };
         window.deleteSite = async (id, isMy = false) => { if (!requireAuth()) return; if (confirm('삭제하시겠습니까?')) { const col = isMy ? getMySitesCol(currentUser.uid) : getSitesCol(currentUser.uid); await deleteDoc(doc(col, id)); } };
