@@ -102,10 +102,12 @@
         <div class="mt-5 border-t border-gray-200 pt-8 pb-20">
             <div class="w-full flex flex-col md:flex-row items-center mb-6 gap-4">
                 <div class="flex items-center gap-3 shrink-0">
-                    <div onclick="openCalendarSettings()" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 hover:bg-gray-50 cursor-pointer">
-                        <i class="fas fa-calendar-alt text-blue-500"></i>
-                    </div>
-                    <button type="button" onclick="openCalendarSettings()" class="text-lg font-bold text-gray-800 hover:text-blue-600 transition-colors">업무 일정</button>
+                    <!-- 달력 아이콘 클릭 시 구글 캘린더 바로가기로 변경 -->
+                    <a href="https://calendar.google.com/" target="_blank" title="구글 캘린더 새 창에서 열기" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group">
+                        <i class="fas fa-calendar-alt text-blue-500 group-hover:scale-110 transition-transform"></i>
+                    </a>
+                    <!-- 글자 클릭 시 기존처럼 연동 설정 모달창 열림 -->
+                    <button type="button" onclick="openCalendarSettings()" class="text-lg font-bold text-gray-800 hover:text-blue-600 transition-colors" title="캘린더 연동 설정">업무 일정</button>
                 </div>
                 
                 <!-- 환율 정보 영역 -->
@@ -501,8 +503,17 @@
             const input = document.getElementById('todoInput');
             const text = input.value.trim();
             if (text) {
+                // 실시간 오늘 날짜 생성 (형식: [MM/DD])
+                const now = new Date();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const datePrefix = `[${month}/${day}] `;
+                
+                // 날짜 접두사와 입력한 텍스트 결합
+                const formattedText = datePrefix + text;
+
                 await setDoc(doc(getTodosCol(currentUser.uid)), { 
-                    text, done: false, createdAt: Date.now() 
+                    text: formattedText, done: false, createdAt: Date.now() 
                 });
                 input.value = '';
             }
