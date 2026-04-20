@@ -251,7 +251,7 @@
         </div>
     </div>
 
-    <!-- Modals (생략 없이 유지) -->
+    <!-- Modals -->
     <div id="siteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity text-black p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border">
             <h3 id="modalTitle" class="text-base font-bold text-gray-800 mb-5">바로가기 추가</h3>
@@ -480,27 +480,19 @@
             const H = parseFloat(document.getElementById('fedex-h').value) || 0;
             const actualWt = parseFloat(document.getElementById('fedex-weight').value) || 0;
             
-            // 1. 용적 중량 계산: (가로x세로x높이) / 5000
             const dimWt = (L * W * H) / 5000;
-            
-            // 2. 청구 중량 결정: 실중량 vs 용적중량 중 큰 값
             const chargeWt = Math.max(dimWt, actualWt);
             
-            // 3. 운임 시뮬레이션 데이터 (가상의 요금표 기준: 인도-한국 구간)
-            // 기본 운임: 1kg당 약 $12 (중량이 커질수록 kg당 단가는 보통 하락하지만 시뮬레이터에서는 고정 단가 적용)
-            // 유류할증료: 기본 운임의 약 28% 적용
             const baseRatePerKg = 12.5; 
             const fuelSurchargeRate = 0.28;
             
             const baseFreight = chargeWt * baseRatePerKg;
             const totalUSD = baseFreight * (1 + fuelSurchargeRate);
             
-            // UI 업데이트
             document.getElementById('fedex-dim-wt').innerText = dimWt.toFixed(2) + ' kg';
             document.getElementById('fedex-charge-wt').innerText = chargeWt.toFixed(2) + ' kg';
             document.getElementById('fedex-usd').innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
-            // 원화 환산 (상단 환율 입력값 사용)
             const currentRate = parseFloat(document.getElementById('calc-rate-input').value) || 0;
             const totalKRW = totalUSD * currentRate;
             document.getElementById('fedex-krw').innerText = '≈ ' + Math.round(totalKRW).toLocaleString('ko-KR') + ' 원';
@@ -514,7 +506,6 @@
             const total = (price + shipping) * 1.08 * currentRate;
             document.getElementById('calc-total-display').innerText = Math.round(total).toLocaleString('ko-KR') + ' 원';
             
-            // 환율 값이 바뀔 때 FedEx 시뮬레이터 원화도 함께 갱신
             window.calculateFedEx();
         };
 
@@ -552,7 +543,7 @@
             }
         };
 
-        // --- Other Management Functions (Sites, Categories, Todos) ---
+        // --- Other Management Functions ---
         window.addCategory = async () => {
             if (!requireAuth()) return;
             const name = prompt('새 카테고리 이름을 입력하세요:');
@@ -708,26 +699,35 @@
                 section.addEventListener('dragover', (e) => e.preventDefault());
                 section.addEventListener('drop', (e) => handleDrop(e, cIdx));
                 const catSites = sites.filter(s => s.category === cat).sort((a, b) => { const valA = a.order !== undefined ? a.order : (a.createdAt || 0); const valB = b.order !== undefined ? b.order : (b.createdAt || 0); return valA - valB; });
+                
+                // 아이콘 크기를 기존 w-9 h-9(36px)에서 w-6 h-6(24px)으로 약 33% 축소
                 const sitesHtml = catSites.map(site => `
-                    <div class="site-card relative flex flex-col items-center group p-1.5 cursor-grab active:cursor-grabbing hover:bg-gray-50 rounded-xl transition-all" draggable="true" ondragstart="handleSiteDragStart(event, '${site.id}')" ondragend="handleSiteDragEnd(event)" ondragover="handleSiteDragOver(event)" ondragleave="handleSiteDragLeave(event)" ondrop="handleSiteDrop(event, '${cat}', '${site.id}')">
-                        <button onclick="deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-1 right-1 bg-red-500 text-white w-4 h-4 rounded-full text-[8px] flex items-center justify-center hover:bg-red-600 shadow-sm z-10 transition-opacity"><i class="fas fa-times"></i></button>
-                        <div class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-max max-w-[140px] px-2.5 py-1.5 bg-gray-800 text-white text-[10px] rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-center hidden group-hover:block z-30">${site.description || site.name}</div>
+                    <div class="site-card relative flex flex-col items-center group p-1 cursor-grab active:cursor-grabbing hover:bg-gray-50 rounded-xl transition-all" draggable="true" ondragstart="handleSiteDragStart(event, '${site.id}')" ondragend="handleSiteDragEnd(event)" ondragover="handleSiteDragOver(event)" ondragleave="handleSiteDragLeave(event)" ondrop="handleSiteDrop(event, '${cat}', '${site.id}')">
+                        <button onclick="deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center hover:bg-red-600 shadow-sm z-10 transition-opacity"><i class="fas fa-times"></i></button>
+                        <div class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-max max-w-[120px] px-2 py-1 bg-gray-800 text-white text-[9px] rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-center hidden group-hover:block z-30">${site.description || site.name}</div>
                         <a href="${site.url}" target="_blank" draggable="false" class="flex flex-col items-center text-center w-full">
-                            <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center border border-gray-200 mb-1.5 overflow-hidden p-1 shadow-sm"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" draggable="false" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div>
-                            <span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5">${site.name}</span>
+                            <div class="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-0.5 shadow-sm transition-transform group-hover:scale-105">
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" draggable="false" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'">
+                            </div>
+                            <span class="text-[9px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span>
                         </a>
                     </div>`).join('');
+                
                 section.innerHTML = `
-                    <div class="flex items-center mb-3 group">
-                        <h2 class="text-sm font-bold text-gray-700 border-l-[3px] border-blue-500 pl-2 flex items-center gap-1.5 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2>
-                        <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 ml-auto">
-                            <button onclick="renameCategory('${cat}')" class="text-gray-400 hover:text-blue-500 w-6 h-6 flex items-center justify-center rounded"><i class="fas fa-pen text-[10px]"></i></button>
-                            <button onclick="deleteCategory('${cat}')" class="text-gray-400 hover:text-red-500 w-6 h-6 flex items-center justify-center rounded"><i class="fas fa-trash text-[10px]"></i></button>
+                    <div class="flex items-center mb-0 group">
+                        <h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2>
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-auto">
+                            <button onclick="renameCategory('${cat}')" class="text-gray-400 hover:text-blue-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-pen text-[9px]"></i></button>
+                            <button onclick="deleteCategory('${cat}')" class="text-gray-400 hover:text-red-500 w-5 h-5 flex items-center justify-center rounded"><i class="fas fa-trash text-[9px]"></i></button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1 items-start min-h-[60px]" ondragover="handleSiteDragOver(event)" ondrop="handleSiteDrop(event, '${cat}', null)">
+                    <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14 gap-0.5 items-start min-h-[50px]" ondragover="handleSiteDragOver(event)" ondrop="handleSiteDrop(event, '${cat}', null)">
                         ${sitesHtml}
-                        <div class="flex flex-col items-center group cursor-pointer p-1.5" onclick="openQuickAddModal('${cat}')"><div class="w-9 h-9 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1.5 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div>
+                        <div class="flex flex-col items-center group cursor-pointer p-1" onclick="openQuickAddModal('${cat}')">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all">
+                                <i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[9px]"></i>
+                            </div>
+                        </div>
                     </div>`;
                 dashboard.appendChild(section);
             });
