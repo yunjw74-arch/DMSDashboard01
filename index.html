@@ -21,11 +21,50 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .sticky-active { border-bottom: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+
+        /* Sticky Note Styles */
+        .sticky-note {
+            position: absolute;
+            width: 200px;
+            min-height: 200px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            border-radius: 2px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transform: rotate(-1deg);
+            transition: box-shadow 0.2s;
+        }
+        .sticky-note:hover { box-shadow: 8px 8px 20px rgba(0,0,0,0.15); }
+        .sticky-note-header {
+            cursor: move;
+            height: 24px;
+            background: rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 4px;
+        }
+        .sticky-note-body {
+            flex: 1;
+            padding: 10px;
+            font-family: 'NanumSquareAc', sans-serif;
+            font-size: 13px;
+            border: none;
+            background: transparent;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
     </style>
 </head>
-<body class="px-4 md:px-10 pb-20 relative font-nanum-ac text-black">
+<body class="px-4 md:px-10 pb-20 relative font-nanum-ac text-black min-h-screen">
 
-    <div class="max-w-[1600px] w-[98%] mx-auto">
+    <div id="sticky-notes-container" class="absolute inset-0 pointer-events-none overflow-hidden" style="z-index: 99;">
+        <!-- 포스트잇들이 여기에 렌더링됩니다 -->
+    </div>
+
+    <div class="max-w-[1600px] w-[98%] mx-auto relative" style="z-index: 1;">
         <!-- 상단 고정 영역 (헤더 + 카테고리 첫 줄) -->
         <div class="sticky top-0 z-40 bg-[#f8f9fa] pt-4 md:pt-8">
             <header class="pb-4 flex flex-col xl:flex-row items-center justify-between border-b border-gray-200 gap-4 mb-2">
@@ -68,17 +107,25 @@
                                 </svg>
                             </div>
                         </a>
-                        <a href="https://naver.com/" target="_blank" title="네이버" class="bg-white hover:bg-gray-50 transition w-8 h-8 rounded-full border border-gray-200 shadow-sm flex items-center justify-center group">
-                            <span class="text-[#03c75a] font-extrabold text-[13px]">N</span>
-                        </a>
                     </div>
 
                     <div class="w-px h-5 bg-gray-300 mx-1"></div>
 
-                    <button id="login-btn" onclick="loginWithGoogle()" class="flex items-center gap-2 bg-white hover:bg-blue-50 border border-gray-200 shadow-sm px-3 py-1.5 rounded-full transition-colors group">
-                        <img src="https://www.google.com/favicon.ico" alt="Google" class="w-3.5 h-3.5">
-                        <span class="text-[11px] font-bold text-gray-600 group-hover:text-blue-600">구글 로그인</span>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <!-- ✨ 포스트잇 추가 버튼 -->
+                        <button type="button" onclick="addStickyNote()" title="포스트잇 메모 추가" class="bg-yellow-100 hover:bg-yellow-200 border-yellow-300 w-8 h-8 rounded-full border shadow-sm flex items-center justify-center group transition-colors">
+                            <i class="fas fa-sticky-note text-yellow-600 text-xs"></i>
+                        </button>
+
+                        <button type="button" onclick="addCategory()" title="카테고리 추가" class="bg-white hover:bg-blue-50 border-gray-200 w-8 h-8 rounded-full border shadow-sm flex items-center justify-center group">
+                            <i class="fas fa-folder-plus text-blue-500 text-xs"></i>
+                        </button>
+                        
+                        <button id="login-btn" onclick="loginWithGoogle()" class="flex items-center gap-2 bg-white hover:bg-blue-50 border border-gray-200 shadow-sm px-3 py-1.5 rounded-full transition-colors group">
+                            <img src="https://www.google.com/favicon.ico" alt="Google" class="w-3.5 h-3.5">
+                            <span class="text-[11px] font-bold text-gray-600 group-hover:text-blue-600">구글 로그인</span>
+                        </button>
+                    </div>
 
                     <div id="user-profile-area" class="hidden flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
                         <img id="user-avatar" src="" class="w-5 h-5 rounded-full hidden" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
@@ -88,10 +135,6 @@
                             <i class="fas fa-sign-out-alt text-xs"></i>
                         </button>
                     </div>
-
-                    <button type="button" onclick="addCategory()" title="카테고리 추가" class="bg-white hover:bg-blue-50 border-gray-200 w-8 h-8 rounded-full border shadow-sm flex items-center justify-center group">
-                        <i class="fas fa-folder-plus text-blue-500 text-xs"></i>
-                    </button>
                 </div>
             </header>
 
@@ -150,7 +193,6 @@
 
             <!-- 하단 계산기 및 도구 -->
             <div class="mt-6 flex flex-col gap-4">
-                <!-- 원가 계산기 -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 overflow-x-auto w-full xl:w-max">
                     <div class="flex flex-wrap items-center justify-start gap-2 md:gap-4 w-max mx-auto xl:mx-0">
                         <div class="flex flex-col">
@@ -241,38 +283,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- AI 스마트 번역 (2분할 뷰) -->
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-3 w-full">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2">
-                            <div class="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center shadow-sm">
-                                <i class="fas fa-language text-blue-600"></i>
-                            </div>
-                            <h3 class="text-[12px] font-extrabold text-gray-800">AI 스마트 번역 (2분할 뷰)</h3>
-                        </div>
-                        <button onclick="translateAI()" id="trans-btn" class="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-bold transition-all shadow-sm flex items-center gap-2">
-                            <i class="fas fa-magic"></i> 번역하기
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[9px] font-bold text-gray-400 ml-1 uppercase">Original (원문)</label>
-                            <textarea id="trans-input-area" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all h-[260px] overflow-y-auto" placeholder="번역할 내용을 입력하세요..."></textarea>
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[9px] font-bold text-blue-500 ml-1 uppercase">Translation (번역본)</label>
-                            <div id="trans-output-area" class="w-full px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-xs font-bold text-blue-800 h-[260px] overflow-y-auto break-words whitespace-pre-wrap">번역 결과가 여기에 표시됩니다.</div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-2 flex justify-end">
-                        <a href="https://translate.google.com" target="_blank" class="text-[9px] text-gray-400 hover:text-blue-500 flex items-center gap-1 font-bold">
-                            Google 번역 상세 페이지 <i class="fas fa-external-link-alt text-[8px]"></i>
-                        </a>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -320,7 +330,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Initialization ---
         const firebaseConfig = {
@@ -338,76 +348,100 @@
         const provider = new GoogleAuthProvider();
 
         let sites = []; let categories = []; let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
-        let todos = []; let currentUser = null; let currentEditTodoIndex = -1; let unsubs = [];
+        let todos = []; let stickyNotes = []; let currentUser = null; let currentEditTodoIndex = -1; let unsubs = [];
 
         const getUserRoot = (uid) => `artifacts/${appId}/users/${uid}`;
         const getConfigDoc = (uid) => doc(db, getUserRoot(uid), 'config', 'settings');
         const getSitesCol = (uid) => collection(db, getUserRoot(uid), 'sites');
         const getTodosCol = (uid) => collection(db, getUserRoot(uid), 'todos');
+        const getStickyCol = (uid) => collection(db, getUserRoot(uid), 'stickyNotes');
 
-        // --- Gemini AI Core Logic (Environment Optimized) ---
-        window.callGeminiAPI = async (prompt) => {
-            const apiKey = ""; // API Key injected at runtime
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            const systemMsg = "당신은 비즈니스 및 물류 전문 번역가입니다. 입력된 텍스트의 언어를 감지하여 한국어면 영어로, 그 외 모든 언어는 한국어로 자연스럽고 정중하게 번역하십시오. 번역 결과만 텍스트로 출력하세요.";
-            
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: systemMsg }] }
+        // --- Sticky Note Logic ---
+        window.addStickyNote = async () => {
+            if (!requireAuth()) return;
+            const colors = ['#fff9c4', '#ffecb3', '#f8bbd0', '#e1f5fe', '#f1f8e9'];
+            const note = {
+                text: '',
+                x: 100 + Math.random() * 100,
+                y: 100 + Math.random() * 100,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                createdAt: Date.now()
             };
+            await setDoc(doc(getStickyCol(currentUser.uid)), note);
+        };
 
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            for (let i = 0; i < 5; i++) {
-                try {
-                    const res = await fetch(url, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(payload) 
-                    });
-                    
-                    if (!res.ok) throw new Error(`API_FAIL_${res.status}`);
-                    
-                    const data = await res.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!text) throw new Error("EMPTY_DATA");
-                    
-                    return text;
-                } catch (e) {
-                    if (i === 4) {
-                        console.error("Gemini Error:", e);
-                        return null;
+        window.deleteStickyNote = async (id) => {
+            if (!requireAuth()) return;
+            await deleteDoc(doc(getStickyCol(currentUser.uid), id));
+        };
+
+        window.updateStickyNote = async (id, data) => {
+            if (!requireAuth()) return;
+            await updateDoc(doc(getStickyCol(currentUser.uid), id), data);
+        };
+
+        let activeDragNote = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        function initStickyDrag(e, id) {
+            if (!currentUser) return;
+            activeDragNote = document.getElementById(`note-${id}`);
+            const rect = activeDragNote.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            
+            document.addEventListener('mousemove', handleStickyMouseMove);
+            document.addEventListener('mouseup', () => handleStickyMouseUp(id));
+        }
+
+        function handleStickyMouseMove(e) {
+            if (!activeDragNote) return;
+            const x = e.clientX - dragOffset.x;
+            const y = e.clientY - dragOffset.y + window.scrollY;
+            activeDragNote.style.left = `${x}px`;
+            activeDragNote.style.top = `${y}px`;
+        }
+
+        async function handleStickyMouseUp(id) {
+            if (!activeDragNote) return;
+            const x = parseFloat(activeDragNote.style.left);
+            const y = parseFloat(activeDragNote.style.top);
+            
+            document.removeEventListener('mousemove', handleStickyMouseMove);
+            activeDragNote = null;
+            
+            await window.updateStickyNote(id, { x, y });
+        }
+
+        function renderStickyNotes() {
+            const container = document.getElementById('sticky-notes-container');
+            container.innerHTML = '';
+            stickyNotes.forEach(note => {
+                const el = document.createElement('div');
+                el.id = `note-${note.id}`;
+                el.className = 'sticky-note pointer-events-auto';
+                el.style.left = `${note.x}px`;
+                el.style.top = `${note.y}px`;
+                el.style.backgroundColor = note.color;
+                
+                el.innerHTML = `
+                    <div class="sticky-note-header" onmousedown="window.initStickyDrag(event, '${note.id}')">
+                        <button onclick="deleteStickyNote('${note.id}')" class="text-gray-500 hover:text-red-500 text-[10px] p-1"><i class="fas fa-times"></i></button>
+                    </div>
+                    <textarea class="sticky-note-body" placeholder="메모를 입력하세요...">${note.text || ''}</textarea>
+                `;
+
+                const textarea = el.querySelector('textarea');
+                textarea.addEventListener('blur', () => {
+                    if (textarea.value !== note.text) {
+                        window.updateStickyNote(note.id, { text: textarea.value });
                     }
-                    await new Promise(r => setTimeout(r, delays[i]));
-                }
-            }
-        };
+                });
 
-        window.translateAI = async () => {
-            const input = document.getElementById('trans-input-area');
-            const output = document.getElementById('trans-output-area');
-            const btn = document.getElementById('trans-btn');
-            const text = input.value.trim();
-
-            if (!text) return window.showToast("번역할 텍스트를 입력해주세요.");
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
-            output.innerText = "AI가 문장을 번역하는 중입니다...";
-            output.style.opacity = "0.5";
-
-            const result = await window.callGeminiAPI(text);
-
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-magic"></i> 번역하기';
-            output.style.opacity = "1.0";
-
-            if (result) {
-                output.innerText = result.trim();
-            } else {
-                output.innerText = "번역 엔진과의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.";
-            }
-        };
+                container.appendChild(el);
+            });
+        }
+        window.initStickyDrag = initStickyDrag;
 
         // --- Utils & State Management ---
         window.showToast = (msg) => {
@@ -444,7 +478,7 @@
             } else {
                 loginBtn.classList.remove('hidden'); profileArea.classList.add('hidden');
                 unsubs.forEach(u => u()); unsubs = [];
-                categories = ['기본 카테고리']; sites = []; render(); renderTodos(); updateCalendarIframe();
+                categories = ['기본 카테고리']; sites = []; stickyNotes = []; render(); renderTodos(); renderStickyNotes(); updateCalendarIframe();
             }
         });
 
@@ -462,9 +496,13 @@
             }));
             unsubs.push(onSnapshot(getSitesCol(uid), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); render(); }));
             unsubs.push(onSnapshot(getTodosCol(uid), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); renderTodos(); }));
+            unsubs.push(onSnapshot(getStickyCol(uid), (snap) => { 
+                stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                renderStickyNotes(); 
+            }));
         }
 
-        // --- Drag & Drop ---
+        // --- Drag & Drop for Categories ---
         let dragIdx = -1;
         window.handleDragStart = (e, idx) => { if (!requireAuth()) { e.preventDefault(); return; } dragIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/category', 'true'); };
         window.handleDragEnd = (e) => { e.target.classList.remove('opacity-40'); };
