@@ -233,14 +233,15 @@
             
             <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100 shrink-0">
                 <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">새 바로가기 추가</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <select id="newMyLocation" class="p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                         <option value="left">MY 영역 (좌측)</option>
                         <option value="right">QUICK ACCESS 영역 (우측)</option>
                     </select>
                     <input type="text" id="newMyName" placeholder="이름" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
                     <input type="text" id="newMyUrl" placeholder="URL" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
-                    <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors md:col-span-3">추가하기</button>
+                    <input type="text" id="newMyDesc" placeholder="상세 설명 (선택사항)" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
+                    <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors md:col-span-4">추가하기</button>
                 </div>
             </div>
             
@@ -284,6 +285,7 @@
             <div class="space-y-4">
                 <input type="text" id="siteName" placeholder="이름" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
                 <input type="text" id="siteUrl" placeholder="URL" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
+                <input type="text" id="siteDesc" placeholder="상세 설명 (선택사항)" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
             </div>
             <div class="flex justify-end gap-2 mt-8">
                 <button onclick="window.closeModal()" class="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">취소</button>
@@ -292,6 +294,7 @@
         </div>
     </div>
 
+    <!-- 캘린더 설정 모달 -->
     <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-md border">
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
@@ -362,9 +365,12 @@
 
         window.fetchExchangeRate = async () => {
             try {
-                const res = await fetch('https://api.manana.kr/exchange/rate.json'), data = await res.json(), usd = data.find(d => d.name === 'USDKRW=X');
+                const res = await fetch('https://api.manana.kr/exchange/rate.json');
+                const data = await res.json(); 
+                const usd = data.find(d => d.name === 'USDKRW=X');
                 if (usd) {
-                    const sendRate = usd.rate + 9.8, disp = document.getElementById('exchange-rate-display');
+                    const sendRate = usd.rate + 9.8; 
+                    const disp = document.getElementById('exchange-rate-display');
                     if (disp) disp.innerHTML = `<a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="text-xs font-bold text-gray-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm">1 USD = <span class="text-red-500">${sendRate.toLocaleString('ko-KR', {minimumFractionDigits: 2})}</span> 원</a>`;
                     const input = document.getElementById('calc-rate-input');
                     if (input) { input.value = sendRate.toFixed(2); window.calculateTotal(); }
@@ -374,7 +380,9 @@
 
         // --- Logics ---
         window.calculateTotal = () => {
-            const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
+            const p = parseFloat(document.getElementById('calc-price')?.value) || 0;
+            const s = parseFloat(document.getElementById('calc-shipping')?.value) || 0;
+            const r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
             const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
             const usdD = document.getElementById('calc-total-usd'), krwD = document.getElementById('calc-total-display');
             if (usdD) usdD.innerText = '$ ' + totalUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -393,11 +401,18 @@
         };
 
         window.updateLedWallRecs = () => {
-            const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0, hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
+            const wIn = parseFloat(document.getElementById('led-wall-w')?.value) || 0;
+            const hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
 
-            const wLow = Math.floor(wIn / 320) || 1, wHigh = Math.ceil(wIn / 320) || 1;
-            const hLow = Math.floor(hIn / 160) || 1, hHigh = Math.ceil(hIn / 160) || 1;
+            let wLow = Math.floor(wIn / 320) || 1;
+            let wHigh = Math.ceil(wIn / 320) || 1;
+            if (wLow === wHigh) wHigh += 1; // 동일 배수일 경우 상위 값 보장
+
+            let hLow = Math.floor(hIn / 160) || 1;
+            let hHigh = Math.ceil(hIn / 160) || 1;
+            if (hLow === hHigh) hHigh += 1; // 동일 배수일 경우 상위 값 보장
+            
             const combinations = [{ w: wLow, h: hLow }, { w: wLow, h: hHigh }, { w: wHigh, h: hLow }, { w: wHigh, h: hHigh }];
 
             combinations.forEach((rec, idx) => {
@@ -430,6 +445,7 @@
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
             if (!container) return; container.innerHTML = ''; if (!currentUser) return;
+
             if (toolsVisibility.showCalculator) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max relative group';
                 div.innerHTML = `<button onclick="window.hideTool('calculator')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button><div class="flex flex-wrap items-center justify-start gap-4"><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">USD Price</label><input type="number" id="calc-price" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">+</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Shipping</label><input type="number" id="calc-shipping" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex flex-col text-center"><label class="text-[9px] text-blue-500 font-bold uppercase">Total USD</label><div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px]">$ 0.00</div></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Rate</label><input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex items-center gap-2"><div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div><a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm"><span class="text-[#03c75a] font-black text-[15px]">N</span></a></div></div>`;
@@ -504,7 +520,6 @@
                 const uName = document.getElementById('user-display-name'); if(uName) uName.innerText = user.displayName || user.email.split('@')[0];
                 const uAvatar = document.getElementById('user-avatar'); if(user.photoURL && uAvatar) { uAvatar.src = user.photoURL; uAvatar.classList.remove('hidden'); }
                 startListeners(user.uid);
-                window.fetchExchangeRate();
             } else {
                 const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.remove('hidden');
                 const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.add('hidden');
@@ -545,10 +560,10 @@
         window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
         window.submitMySite = async () => {
             if (!window.requireAuth()) return;
-            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim(), loc = document.getElementById('newMyLocation').value;
+            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim(), loc = document.getElementById('newMyLocation').value, desc = document.getElementById('newMyDesc').value.trim();
             if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, location: loc, createdAt: Date.now() });
-            document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, location: loc, description: desc, createdAt: Date.now() });
+            document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = ''; document.getElementById('newMyDesc').value = '';
         };
         window.addStickyNote = async () => { if (!window.requireAuth()) return; const offset = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', crypto.randomUUID()), { text: '', x: 150 + offset, y: 150 + offset, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
         window.deleteStickyNote = async (id) => { if (!window.requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id)); };
@@ -559,10 +574,10 @@
         window.closeModal = () => document.getElementById('siteModal').classList.add('hidden');
         window.submitSite = async () => {
             if (!window.requireAuth()) return;
-            const n = document.getElementById('siteName').value.trim(), u = document.getElementById('siteUrl').value.trim(), cat = document.getElementById('modalCategory').value;
+            const n = document.getElementById('siteName').value.trim(), u = document.getElementById('siteUrl').value.trim(), cat = document.getElementById('modalCategory').value, desc = document.getElementById('siteDesc').value.trim();
             if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', crypto.randomUUID()), { name: n, url: finalU, category: cat, createdAt: Date.now() });
-            window.closeModal();
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', crypto.randomUUID()), { name: n, url: finalU, category: cat, description: desc, createdAt: Date.now() });
+            window.closeModal(); document.getElementById('siteName').value = ''; document.getElementById('siteUrl').value = ''; document.getElementById('siteDesc').value = '';
         };
         window.openCalendarSettings = () => { if (!window.requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
         window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
@@ -603,8 +618,8 @@
         };
         window.renderMySites = () => {
             const leftC = document.getElementById('my-sites-container'), rightC = document.getElementById('quick-access-container');
-            if (leftC) leftC.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'left', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
-            if (rightC) rightC.innerHTML = mySites.filter(s => s.location === 'right').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'right', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
+            if (leftC) leftC.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'left', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.description ? s.name + '&#10;' + s.description : s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
+            if (rightC) rightC.innerHTML = mySites.filter(s => s.location === 'right').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'right', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.description ? s.name + '&#10;' + s.description : s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
         };
         window.renderMySitesList = () => {
             const leftL = document.getElementById('my-sites-list-left'), rightL = document.getElementById('my-sites-list-right');
@@ -612,33 +627,12 @@
             if (leftL) leftL.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => item(s, 'left')).join('');
             if (rightL) rightL.innerHTML = mySites.filter(s => s.location === 'right').map(s => item(s, 'right')).join('');
         };
-        window.handleMyDragStart = (e, id) => { if (!window.requireAuth()) { e.preventDefault(); return; } e.target.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/mysite', id); };
-        window.handleMyDragEnd = (e) => { e.target.style.opacity = '1'; };
-        window.handleMyDrop = async (e, dropLocation, targetSiteId = null) => {
-            e.preventDefault(); e.stopPropagation();
-            const draggedId = e.dataTransfer.getData('application/mysite');
-            if (!draggedId || !currentUser) return;
-            const draggedIdx = mySites.findIndex(s => s.id === draggedId);
-            if (draggedIdx === -1) return;
-            const draggedItem = mySites[draggedIdx];
-            draggedItem.location = dropLocation;
-            mySites.splice(draggedIdx, 1);
-            if (targetSiteId && targetSiteId !== draggedId) {
-                const targetIdx = mySites.findIndex(s => s.id === targetSiteId);
-                if (targetIdx !== -1) mySites.splice(targetIdx, 0, draggedItem); else mySites.push(draggedItem);
-            } else mySites.push(draggedItem);
-            window.renderMySites(); window.renderMySitesList();
-            const baseTime = Date.now(); 
-            const batch = mySites.map((s, i) => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', s.id), { createdAt: baseTime + i, location: s.location || 'left' }));
-            await Promise.all(batch);
-        };
-
         window.render = () => {
             const m = document.getElementById('dashboard'); m.innerHTML = ''; if (!categories.length) return;
             categories.forEach(cat => {
                 const sec = document.createElement('div'); sec.className = 'category-section bg-white border border-gray-200 border-b-[4px] border-b-gray-300 shadow-md px-5 py-2.5 rounded-2xl flex flex-col h-full';
                 const cs = sites.filter(s => s.category === cat).sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
-                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><button onclick="window.deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center z-10"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
+                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><button onclick="window.deleteSite('${site.id}')" class="delete-btn opacity-0 absolute -top-0.5 right-0.5 bg-red-500 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center z-10"><i class="fas fa-times"></i></button><a href="${site.url}" target="_blank" title="${site.description ? site.name + '&#10;' + site.description : site.name}" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
                 sec.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sh}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="window.openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
                 m.appendChild(sec);
             });
@@ -648,12 +642,23 @@
             document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
             l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
+        window.handleMyDragStart = (e, idx) => { if (!window.requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
+        window.handleMyDrop = async (e, dropIdx) => {
+            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
+            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
+                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
+                const batch = mySites.map((s, i) => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', s.id), { createdAt: Date.now() + i }));
+                await Promise.all(batch);
+            }
+        };
 
-        // --- Init ---
+        // --- Final Execution ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
         document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
+        
+        // Initial Fetch
         window.fetchExchangeRate(); 
         setInterval(window.fetchExchangeRate, 60000);
         window.updateCalendarIframe();
