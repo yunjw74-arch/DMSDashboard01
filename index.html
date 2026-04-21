@@ -165,10 +165,14 @@
 
             <div class="flex items-center px-3 py-2.5 gap-4">
                 <span class="text-[14px] font-black text-blue-600 shrink-0">MY</span>
-                <div id="my-sites-container" class="flex items-center gap-3 overflow-x-auto no-scrollbar"></div>
+                <!-- Left (MY) Container -->
+                <div id="my-sites-container" class="flex items-center gap-3 overflow-x-auto no-scrollbar flex-1 min-h-[32px] p-1 border border-transparent hover:border-gray-100 rounded-lg transition-colors" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, 'left')"></div>
+                
                 <div class="flex items-center gap-3 shrink-0 ml-auto mr-2">
                     <div class="w-px h-4 bg-gray-300 mx-1"></div>
-                    <span onclick="window.openMySitesManager()" class="text-[10px] text-gray-400 font-bold uppercase tracking-tight cursor-pointer hover:text-blue-600 transition-colors">Quick Access</span>
+                    <!-- Right (Quick Access) Container -->
+                    <div id="quick-access-container" class="flex items-center gap-3 overflow-x-auto no-scrollbar min-h-[32px] min-w-[32px] p-1 border border-transparent hover:border-gray-100 rounded-lg transition-colors" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, 'right')"></div>
+                    <span onclick="window.openMySitesManager()" class="text-[10px] text-gray-400 font-bold uppercase tracking-tight cursor-pointer hover:text-blue-600 transition-colors ml-1">Quick Access</span>
                 </div>
             </div>
         </div>
@@ -214,45 +218,58 @@
                 </div>
             </div>
 
-            <!-- 비즈니스 도구 컨테이너 -->
+            <!-- 동적 도구 컨테이너 -->
             <div id="business-tools-container" class="mt-6 flex flex-col gap-4"></div>
         </div>
     </div>
 
     <!-- 통합 관리 모달 -->
     <div id="mySitesManagerModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
-        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border flex flex-col max-h-[85vh]">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-2xl border flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-black text-gray-800">Quick Access 관리</h3>
                 <button onclick="window.closeMySitesManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100">
+            <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100 shrink-0">
                 <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">새 바로가기 추가</p>
-                <div class="grid grid-cols-1 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="newMyLocation" class="p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="left">MY 영역 (좌측)</option>
+                        <option value="right">QUICK ACCESS 영역 (우측)</option>
+                    </select>
                     <input type="text" id="newMyName" placeholder="이름" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
                     <input type="text" id="newMyUrl" placeholder="URL" class="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none">
-                    <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors">추가하기</button>
+                    <button onclick="window.submitMySite()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors md:col-span-3">추가하기</button>
                 </div>
             </div>
             
-            <p class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-wider">현재 등록된 사이트 (드래그 순서 변경)</p>
-            <div id="my-sites-list" class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar mb-6"></div>
+            <p class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-wider shrink-0">현재 등록된 사이트 (영역 간 드래그 이동 가능)</p>
+            <div class="flex flex-col md:flex-row gap-4 mb-6 min-h-[150px] overflow-hidden">
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <p class="text-[9px] font-bold text-blue-600 mb-1">MY 옆 (좌측)</p>
+                    <div id="my-sites-list-left" class="flex-1 overflow-y-auto space-y-2 no-scrollbar bg-gray-50 p-2 rounded-xl border border-gray-200 shadow-inner" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, 'left')"></div>
+                </div>
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <p class="text-[9px] font-bold text-gray-400 mb-1">QUICK ACCESS 옆 (우측)</p>
+                    <div id="my-sites-list-right" class="flex-1 overflow-y-auto space-y-2 no-scrollbar bg-gray-50 p-2 rounded-xl border border-gray-200 shadow-inner" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, 'right')"></div>
+                </div>
+            </div>
 
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shrink-0">
                 <p class="text-[11px] font-bold text-blue-600 mb-3 uppercase tracking-wider">비즈니스 도구 설정</p>
-                <div class="flex flex-col gap-2">
-                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm border border-gray-100">
                         <input type="checkbox" id="toggle-calculator" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="text-sm font-bold text-gray-700">수입 원가 계산기</span>
+                        <span class="text-xs font-bold text-gray-700">수입 원가 계산기</span>
                     </label>
-                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm border border-gray-100">
                         <input type="checkbox" id="toggle-fedex" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="text-sm font-bold text-gray-700">FedEx 운임 시뮬레이터</span>
+                        <span class="text-xs font-bold text-gray-700">FedEx 시뮬레이터</span>
                     </label>
-                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                    <label class="flex items-center gap-3 bg-white p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-sm border border-gray-100">
                         <input type="checkbox" id="toggle-ledcalc" onchange="window.updateToolsVisibility()" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="text-sm font-bold text-gray-700">LED 모듈 추천기 & 16:9 계산기</span>
+                        <span class="text-xs font-bold text-gray-700">LED 추천 & 비율 계산기</span>
                     </label>
                 </div>
             </div>
@@ -275,9 +292,8 @@
         </div>
     </div>
 
-    <!-- 캘린더 설정 모달 -->
     <div id="calendarModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
-        <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-w-md border">
+        <div class="bg-white p-7 rounded-2xl shadow-xl w-full max-md border">
             <h3 class="text-base font-bold text-gray-800 mb-4">캘린더 설정</h3>
             <input type="text" id="calendarSrcInput" placeholder="Google Calendar ID" class="w-full p-2.5 border rounded-lg bg-gray-50 text-sm">
             <div class="flex justify-end gap-2 mt-6">
@@ -312,7 +328,7 @@
         let sites = [], categories = [], mySites = [], todos = [], stickyNotes = [], unsubs = [];
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
         let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
-        let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
+        let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 };
 
         const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
 
@@ -356,7 +372,7 @@
             } catch (e) {}
         };
 
-        // --- Business Logic ---
+        // --- Logics ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0, s = parseFloat(document.getElementById('calc-shipping')?.value) || 0, r = parseFloat(document.getElementById('calc-rate-input')?.value) || 0;
             const totalUSD = (p + s) * 1.08, totalKRW = totalUSD * r;
@@ -382,35 +398,23 @@
 
             const wLow = Math.floor(wIn / 320) || 1, wHigh = Math.ceil(wIn / 320) || 1;
             const hLow = Math.floor(hIn / 160) || 1, hHigh = Math.ceil(hIn / 160) || 1;
-            
-            const combinations = [
-                { w: wLow, h: hLow },
-                { w: wLow, h: hHigh },
-                { w: wHigh, h: hLow },
-                { w: wHigh, h: hHigh }
-            ];
+            const combinations = [{ w: wLow, h: hLow }, { w: wLow, h: hHigh }, { w: wHigh, h: hLow }, { w: wHigh, h: hHigh }];
 
             combinations.forEach((rec, idx) => {
-                const rw = rec.w * 320, rh = rec.h * 160;
-                const totalModules = rec.w * rec.h;
+                const rw = rec.w * 320, rh = rec.h * 160, total = rec.w * rec.h;
                 const sizeEl = document.getElementById(`led-rec${idx+1}-size`);
                 const countEl = document.getElementById(`led-rec${idx+1}-count`);
                 const inchEl = document.getElementById(`led-rec${idx+1}-inch`);
                 const pwrEl = document.getElementById(`led-rec${idx+1}-pwr`);
                 const priceEl = document.getElementById(`led-rec${idx+1}-price`);
-                
                 if(sizeEl) sizeEl.innerText = `${rw} x ${rh} mm`;
-                if(countEl) countEl.innerText = `${rec.w}W x ${rec.h}H (총 ${totalModules}장)`;
+                if(countEl) countEl.innerText = `${rec.w}W x ${rec.h}H (총 ${total}장)`;
                 if(inchEl) inchEl.innerText = (Math.sqrt(rw*rw + rh*rh) / 25.4).toFixed(1) + " inch";
                 if(pwrEl) {
-                    const maxKw = (totalModules * 20.5) / 1000;
-                    const avgKw = maxKw * 0.3; // -70% 적용
-                    pwrEl.innerText = `Max ${maxKw.toFixed(2)}kW / Avg ${avgKw.toFixed(2)}kW`;
+                    const maxKw = (total * 20.5) / 1000;
+                    pwrEl.innerText = `Max ${maxKw.toFixed(2)}kW / Avg ${(maxKw * 0.3).toFixed(2)}kW`;
                 }
-                if(priceEl) {
-                    const totalPrice = totalModules * 150000;
-                    priceEl.innerText = totalPrice.toLocaleString('ko-KR') + " 원";
-                }
+                if(priceEl) priceEl.innerText = (total * 150000).toLocaleString('ko-KR') + " 원";
             });
         };
 
@@ -426,7 +430,6 @@
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
             if (!container) return; container.innerHTML = ''; if (!currentUser) return;
-
             if (toolsVisibility.showCalculator) {
                 const div = document.createElement('div'); div.className = 'tool-module bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 overflow-x-auto w-full xl:w-max relative group';
                 div.innerHTML = `<button onclick="window.hideTool('calculator')" class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times text-xs"></i></button><div class="flex flex-wrap items-center justify-start gap-4"><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">USD Price</label><input type="number" id="calc-price" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">+</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Shipping</label><input type="number" id="calc-shipping" class="w-24 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="text-center"><label class="text-[9px] text-gray-500 block font-bold">Tax</label><span class="text-xs font-bold text-gray-500">1.08</span></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex flex-col text-center"><label class="text-[9px] text-blue-500 font-bold uppercase">Total USD</label><div id="calc-total-usd" class="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs font-black text-blue-600 min-w-[80px]">$ 0.00</div></div><span class="text-gray-400 mt-3 font-bold">×</span><div class="flex flex-col"><label class="text-[9px] text-gray-500 font-bold uppercase">Rate</label><input type="number" id="calc-rate-input" class="w-28 px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-bold text-green-700" oninput="window.calculateTotal()"></div><span class="text-gray-400 mt-3 font-bold">=</span><div class="flex items-center gap-2"><div id="calc-total-display" class="px-4 py-2 bg-blue-600 border border-blue-700 rounded-lg text-lg text-white font-extrabold min-w-[160px] text-right shadow-sm">0 원</div><a href="https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW" target="_blank" class="w-9 h-9 flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm"><span class="text-[#03c75a] font-black text-[15px]">N</span></a></div></div>`;
@@ -466,7 +469,7 @@
                                 <div class="text-[8px] font-bold text-blue-500 mt-1" id="led-rec${i}-count">-</div>
                                 <div class="text-[9px] font-black text-blue-600 mt-1 bg-blue-50 py-0.5 rounded" id="led-rec${i}-inch">0.0 inch</div>
                                 <div class="text-[8px] font-bold text-red-500 mt-1" id="led-rec${i}-pwr">-</div>
-                                <div class="text-[12px] font-extrabold text-gray-800 mt-2" id="led-rec${i}-price">-</div>
+                                <div class="text-[12px] font-extrabold text-gray-800 mt-2 border-t pt-1 border-gray-100" id="led-rec${i}-price">-</div>
                             </div>`).join('')}
                         </div>
                     </div>`;
@@ -492,7 +495,7 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { tools: toolsVisibility }, { merge: true });
         };
 
-        // --- Event Listeners ---
+        // --- Firebase Handlers ---
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user && !user.isAnonymous) {
@@ -506,7 +509,7 @@
                 const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.remove('hidden');
                 const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.add('hidden');
                 unsubs.forEach(u => u()); unsubs = []; categories = []; sites = []; mySites = []; stickyNotes = []; toolsVisibility = {showCalculator: false, showFedEx: false, showLedCalc: false};
-                window.render(); window.renderStickyNotes(); window.renderTodos(); window.renderBusinessTools(); window.updateCalendarIframe();
+                window.render(); window.renderStickyNotes(); window.renderTodos(); window.renderBusinessTools(); window.updateCalendarIframe(); window.renderMySites();
             }
         });
 
@@ -526,24 +529,25 @@
                 } else { 
                     setDoc(doc(db, ...pathArr, 'config', 'settings'), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: false, showFedEx: false, showLedCalc: false} }); 
                 }
-            }, (err) => {}));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }, (err) => {}));
+            }));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }));
             unsubs.push(onSnapshot(collection(db, ...pathArr, 'mySites'), (snap) => { 
                 mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 mySites.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
                 window.renderMySites(); window.renderMySitesList(); 
-            }, (err) => {}));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }, (err) => {}));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }, (err) => {}));
+            }));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
         }
 
+        // --- Interaction Globals ---
         window.openMySitesManager = () => { if (!window.requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
         window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
         window.submitMySite = async () => {
             if (!window.requireAuth()) return;
-            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim();
+            const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim(), loc = document.getElementById('newMyLocation').value;
             if (!n || !u) return; const finalU = u.startsWith('http') ? u : 'https://' + u;
-            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, createdAt: Date.now() });
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, location: loc, createdAt: Date.now() });
             document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = '';
         };
         window.addStickyNote = async () => { if (!window.requireAuth()) return; const offset = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', crypto.randomUUID()), { text: '', x: 150 + offset, y: 150 + offset, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
@@ -598,13 +602,37 @@
             });
         };
         window.renderMySites = () => {
-            const container = document.getElementById('my-sites-container'); if (!container) return;
-            container.innerHTML = mySites.map((s, idx) => `<div class="my-site-item shrink-0" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><a href="${s.url}" target="_blank" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
+            const leftC = document.getElementById('my-sites-container'), rightC = document.getElementById('quick-access-container');
+            if (leftC) leftC.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'left', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
+            if (rightC) rightC.innerHTML = mySites.filter(s => s.location === 'right').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'right', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
         };
         window.renderMySitesList = () => {
-            const list = document.getElementById('my-sites-list'); if (!list) return;
-            list.innerHTML = mySites.map((s, idx) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm" draggable="true" ondragstart="window.handleMyDragStart(event, ${idx})" ondragover="event.preventDefault()" ondrop="window.handleMyDrop(event, ${idx})"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-sm font-bold text-gray-700">${s.name}</span></div><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-trash-alt text-xs"></i></button></div>`).join('');
+            const leftL = document.getElementById('my-sites-list-left'), rightL = document.getElementById('my-sites-list-right');
+            const item = (s, loc) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragend="window.handleMyDragEnd(event)" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, '${loc}', '${s.id}')"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-xs font-bold text-gray-700 truncate w-24">${s.name}</span></div><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-trash-alt text-xs"></i></button></div>`;
+            if (leftL) leftL.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => item(s, 'left')).join('');
+            if (rightL) rightL.innerHTML = mySites.filter(s => s.location === 'right').map(s => item(s, 'right')).join('');
         };
+        window.handleMyDragStart = (e, id) => { if (!window.requireAuth()) { e.preventDefault(); return; } e.target.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/mysite', id); };
+        window.handleMyDragEnd = (e) => { e.target.style.opacity = '1'; };
+        window.handleMyDrop = async (e, dropLocation, targetSiteId = null) => {
+            e.preventDefault(); e.stopPropagation();
+            const draggedId = e.dataTransfer.getData('application/mysite');
+            if (!draggedId || !currentUser) return;
+            const draggedIdx = mySites.findIndex(s => s.id === draggedId);
+            if (draggedIdx === -1) return;
+            const draggedItem = mySites[draggedIdx];
+            draggedItem.location = dropLocation;
+            mySites.splice(draggedIdx, 1);
+            if (targetSiteId && targetSiteId !== draggedId) {
+                const targetIdx = mySites.findIndex(s => s.id === targetSiteId);
+                if (targetIdx !== -1) mySites.splice(targetIdx, 0, draggedItem); else mySites.push(draggedItem);
+            } else mySites.push(draggedItem);
+            window.renderMySites(); window.renderMySitesList();
+            const baseTime = Date.now(); 
+            const batch = mySites.map((s, i) => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', s.id), { createdAt: baseTime + i, location: s.location || 'left' }));
+            await Promise.all(batch);
+        };
+
         window.render = () => {
             const m = document.getElementById('dashboard'); m.innerHTML = ''; if (!categories.length) return;
             categories.forEach(cat => {
@@ -620,23 +648,12 @@
             document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
             l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
-        window.handleMyDragStart = (e, idx) => { if (!window.requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
-        window.handleMyDrop = async (e, dropIdx) => {
-            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
-            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
-                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
-                const batch = mySites.map((s, i) => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', s.id), { createdAt: Date.now() + i }));
-                await Promise.all(batch);
-            }
-        };
 
-        // --- Final Execution ---
+        // --- Init ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
         document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
-        
-        // Initial Fetch
         window.fetchExchangeRate(); 
         setInterval(window.fetchExchangeRate, 60000);
         window.updateCalendarIframe();
