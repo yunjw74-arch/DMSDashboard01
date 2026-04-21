@@ -125,7 +125,7 @@
 
                     <div id="fixed-header-icons" class="flex items-center gap-2">
                         <a href="https://gemini.google.com/" target="_blank" title="제미나이" class="bg-white hover:bg-gray-50 transition w-8 h-8 rounded-full border border-gray-200 shadow-sm flex items-center justify-center">
-                            <svg class="w-4 h-4 text-[#8b5cf6]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z" /></svg>
+                            <svg class="w-4 h-4 text-[#8b5cf6]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z" /></svg>
                         </a>
                         <a href="https://notebooklm.google.com/" target="_blank" title="노트북LM" class="bg-white hover:bg-gray-50 transition w-8 h-8 rounded-full border border-gray-200 shadow-sm flex items-center justify-center">
                             <div class="w-5 h-5 bg-[#1e293b] rounded-full flex items-center justify-center">
@@ -196,9 +196,11 @@
             </div>
             
             <div class="flex flex-col lg:flex-row gap-6 h-[600px]">
+                <!-- Calendar Section (Unchanged) -->
                 <div id="calendar-container-month" class="w-full lg:w-[70%] bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden h-full">
                     <iframe id="calendar-iframe-month" src="" style="border: 0" width="100%" height="100%" frameborder="0" scrolling="no"></iframe>
                 </div>
+                <!-- To-do Section -->
                 <div class="w-full lg:w-[30%] flex flex-col h-full">
                     <div class="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden h-full">
                         <div class="p-3.5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
@@ -313,6 +315,7 @@
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyCAI9RHb4fuk8RmvlhcRtQjqzm_wKbG42k",
             authDomain: "webdashboard-d9db7.firebaseapp.com",
@@ -327,15 +330,16 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
+        // --- State Variables ---
         let currentUser = null;
         let sites = [], categories = [], mySites = [], todos = [], stickyNotes = [], unsubs = [];
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
         let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
-        let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 };
+        let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
 
+        // --- Helper Functions ---
         const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
-
-        // --- GLOBAL FUNCTIONS ---
+        
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
@@ -352,9 +356,11 @@
             return true;
         };
 
+        // --- Auth Functions ---
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast('로그인 실패'); } };
         window.logout = async () => { try { await signOut(auth); window.showToast('로그아웃 완료'); } catch (e) {} };
 
+        // --- Ext API Functions ---
         window.updateCalendarIframe = () => {
             const iframe = document.getElementById('calendar-iframe-month');
             if (iframe) {
@@ -378,7 +384,7 @@
             } catch (e) {}
         };
 
-        // --- Logics ---
+        // --- Core Logics & Calculations ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0;
             const s = parseFloat(document.getElementById('calc-shipping')?.value) || 0;
@@ -405,13 +411,14 @@
             const hIn = parseFloat(document.getElementById('led-wall-h')?.value) || 0;
             if (wIn <= 0 || hIn <= 0) return;
 
+            // 중복 추천 방지를 위한 로직 강화
             let wLow = Math.floor(wIn / 320) || 1;
             let wHigh = Math.ceil(wIn / 320) || 1;
-            if (wLow === wHigh) wHigh += 1; // 동일 배수일 경우 상위 값 보장
+            if (wLow === wHigh) wHigh += 1;
 
             let hLow = Math.floor(hIn / 160) || 1;
             let hHigh = Math.ceil(hIn / 160) || 1;
-            if (hLow === hHigh) hHigh += 1; // 동일 배수일 경우 상위 값 보장
+            if (hLow === hHigh) hHigh += 1; 
             
             const combinations = [{ w: wLow, h: hLow }, { w: wLow, h: hHigh }, { w: wHigh, h: hLow }, { w: wHigh, h: hHigh }];
 
@@ -422,6 +429,7 @@
                 const inchEl = document.getElementById(`led-rec${idx+1}-inch`);
                 const pwrEl = document.getElementById(`led-rec${idx+1}-pwr`);
                 const priceEl = document.getElementById(`led-rec${idx+1}-price`);
+                
                 if(sizeEl) sizeEl.innerText = `${rw} x ${rh} mm`;
                 if(countEl) countEl.innerText = `${rec.w}W x ${rec.h}H (총 ${total}장)`;
                 if(inchEl) inchEl.innerText = (Math.sqrt(rw*rw + rh*rh) / 25.4).toFixed(1) + " inch";
@@ -441,7 +449,7 @@
             if (w > 0 && h > 0 && diagD) diagD.innerText = (Math.sqrt(w*w + h*h) / 25.4).toFixed(1) + " inch";
         };
 
-        // --- Render Business Tools ---
+        // --- Render Functions ---
         window.renderBusinessTools = () => {
             const container = document.getElementById('business-tools-container');
             if (!container) return; container.innerHTML = ''; if (!currentUser) return;
@@ -511,7 +519,7 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { tools: toolsVisibility }, { merge: true });
         };
 
-        // --- Firebase Handlers ---
+        // --- Firebase Core Listeners ---
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user && !user.isAnonymous) {
@@ -544,20 +552,21 @@
                 } else { 
                     setDoc(doc(db, ...pathArr, 'config', 'settings'), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: false, showFedEx: false, showLedCalc: false} }); 
                 }
-            }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }));
+            }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }, (err) => {}));
             unsubs.push(onSnapshot(collection(db, ...pathArr, 'mySites'), (snap) => { 
                 mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 mySites.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
                 window.renderMySites(); window.renderMySitesList(); 
-            }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }));
+            }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'todos'), (snap) => { todos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); todos.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); window.renderTodos(); }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }, (err) => {}));
         }
 
-        // --- Interaction Globals ---
+        // --- Interaction Modal Actions ---
         window.openMySitesManager = () => { if (!window.requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
         window.closeMySitesManager = () => document.getElementById('mySitesManagerModal').classList.add('hidden');
+        
         window.submitMySite = async () => {
             if (!window.requireAuth()) return;
             const n = document.getElementById('newMyName').value.trim(), u = document.getElementById('newMyUrl').value.trim(), loc = document.getElementById('newMyLocation').value, desc = document.getElementById('newMyDesc').value.trim();
@@ -565,9 +574,11 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, location: loc, description: desc, createdAt: Date.now() });
             document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = ''; document.getElementById('newMyDesc').value = '';
         };
+
         window.addStickyNote = async () => { if (!window.requireAuth()) return; const offset = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', crypto.randomUUID()), { text: '', x: 150 + offset, y: 150 + offset, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
         window.deleteStickyNote = async (id) => { if (!window.requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id)); };
         window.updateStickyNote = async (id, data) => { if (!window.requireAuth()) return; await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id), data); };
+        
         window.deleteSite = async (id, isMy = false) => { if (!window.requireAuth()) return; if (confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), isMy ? 'mySites' : 'sites', id)); };
         window.addCategory = async () => { if (!window.requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n) { categories.push(n.trim()); await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { categories }, { merge: true }); } };
         window.openQuickAddModal = (cat) => { if (!window.requireAuth()) return; document.getElementById('modalCategory').value = cat; document.getElementById('modalTitle').innerText = `'${cat}' 사이트 추가`; document.getElementById('siteModal').classList.remove('hidden'); };
@@ -579,14 +590,17 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', crypto.randomUUID()), { name: n, url: finalU, category: cat, description: desc, createdAt: Date.now() });
             window.closeModal(); document.getElementById('siteName').value = ''; document.getElementById('siteUrl').value = ''; document.getElementById('siteDesc').value = '';
         };
+
         window.openCalendarSettings = () => { if (!window.requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
         window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
         window.saveCalendarSettings = async () => { if (!window.requireAuth()) return; const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { calendarId: v }, { merge: true }); window.closeCalendarModal(); } };
+        
         window.toggleTodo = async (id, d) => await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id), { done: !d });
         window.deleteTodo = async (id) => await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id));
+        window.updateTodoText = async (id, newText) => { if (!window.requireAuth()) return; if (newText.trim() !== '') { await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id), { text: newText.trim() }); } };
         window.addTodo = async () => { if (!window.requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', crypto.randomUUID()), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
 
-        // --- Renders ---
+        // --- Render UI ---
         window.initStickyDrag = (e, id) => {
             if (e.target.closest('.color-dot') || e.target.closest('button')) return;
             e.preventDefault(); window.getSelection()?.removeAllRanges();
@@ -595,16 +609,22 @@
             const rect = noteEl.getBoundingClientRect();
             dragStartPos.x = e.clientX; dragStartPos.y = e.clientY;
             noteStartPos.x = rect.left; noteStartPos.y = rect.top;
-            document.addEventListener('mousemove', handleStickyMouseMove);
-            document.addEventListener('mouseup', handleStickyMouseUp);
+            document.addEventListener('mousemove', window.handleStickyMouseMove);
+            document.addEventListener('mouseup', window.handleStickyMouseUp);
         };
-        function handleStickyMouseMove(e) { if (!activeDragId) return; const el = document.getElementById(`note-${activeDragId}`); el.style.left = `${noteStartPos.x + (e.clientX - dragStartPos.x)}px`; el.style.top = `${noteStartPos.y + (e.clientY - dragStartPos.y)}px`; }
-        async function handleStickyMouseUp() {
+        window.handleStickyMouseMove = (e) => { 
+            if (!activeDragId) return; 
+            const el = document.getElementById(`note-${activeDragId}`); 
+            el.style.left = `${noteStartPos.x + (e.clientX - dragStartPos.x)}px`; 
+            el.style.top = `${noteStartPos.y + (e.clientY - dragStartPos.y)}px`; 
+        };
+        window.handleStickyMouseUp = async () => {
             if (!activeDragId) return; document.body.classList.remove('dragging-active');
             const el = document.getElementById(`note-${activeDragId}`), fx = parseFloat(el.style.left), fy = parseFloat(el.style.top), id = activeDragId;
-            activeDragId = null; document.removeEventListener('mousemove', handleStickyMouseMove); document.removeEventListener('mouseup', handleStickyMouseUp);
+            activeDragId = null; document.removeEventListener('mousemove', window.handleStickyMouseMove); document.removeEventListener('mouseup', window.handleStickyMouseUp);
             await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id), { x: fx, y: fy });
-        }
+        };
+
         window.renderStickyNotes = () => {
             const container = document.getElementById('sticky-notes-container'); container.innerHTML = '';
             stickyNotes.forEach(note => {
@@ -616,17 +636,20 @@
                 container.appendChild(el);
             });
         };
+
         window.renderMySites = () => {
             const leftC = document.getElementById('my-sites-container'), rightC = document.getElementById('quick-access-container');
             if (leftC) leftC.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'left', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.description ? s.name + '&#10;' + s.description : s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
             if (rightC) rightC.innerHTML = mySites.filter(s => s.location === 'right').map(s => `<div class="my-site-item shrink-0 cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, 'right', '${s.id}')"><a href="${s.url}" target="_blank" title="${s.description ? s.name + '&#10;' + s.description : s.name}" class="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:shadow-md transition-shadow"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-5 h-5 pointer-events-none"></a></div>`).join('');
         };
+
         window.renderMySitesList = () => {
             const leftL = document.getElementById('my-sites-list-left'), rightL = document.getElementById('my-sites-list-right');
             const item = (s, loc) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragend="window.handleMyDragEnd(event)" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, '${loc}', '${s.id}')"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-xs font-bold text-gray-700 truncate w-24">${s.name}</span></div><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-trash-alt text-xs"></i></button></div>`;
             if (leftL) leftL.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => item(s, 'left')).join('');
             if (rightL) rightL.innerHTML = mySites.filter(s => s.location === 'right').map(s => item(s, 'right')).join('');
         };
+
         window.render = () => {
             const m = document.getElementById('dashboard'); m.innerHTML = ''; if (!categories.length) return;
             categories.forEach(cat => {
@@ -637,28 +660,43 @@
                 m.appendChild(sec);
             });
         };
+
         window.renderTodos = () => {
             const l = document.getElementById('todoList'); if (!l) return;
             document.getElementById('todo-count').innerText = `${todos.filter(t => t.done).length}/${todos.length}`;
-            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 cursor-pointer flex-1" onclick="window.toggleTodo('${t.id}', ${t.done})"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
-        };
-        window.handleMyDragStart = (e, idx) => { if (!window.requireAuth()) { e.preventDefault(); return; } dragMyIdx = idx; e.target.classList.add('opacity-40'); e.dataTransfer.setData('application/mysite', 'true'); };
-        window.handleMyDrop = async (e, dropIdx) => {
-            e.preventDefault(); if (!e.dataTransfer.types.includes('application/mysite')) return;
-            if (dragMyIdx !== dropIdx && dragMyIdx !== -1 && currentUser) {
-                const moved = mySites.splice(dragMyIdx, 1)[0]; mySites.splice(dropIdx, 0, moved);
-                const batch = mySites.map((s, i) => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', s.id), { createdAt: Date.now() + i }));
-                await Promise.all(batch);
-            }
+            l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 flex-1"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center cursor-pointer shrink-0 ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}" onclick="window.toggleTodo('${t.id}', ${t.done})"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight outline-none hover:bg-white focus:bg-white focus:ring-1 focus:ring-blue-200 rounded px-1 -ml-1 transition-colors cursor-text" contenteditable="true" spellcheck="false" onblur="window.updateTodoText('${t.id}', this.textContent)" onkeydown="if(event.key === 'Enter'){event.preventDefault(); this.blur();}">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
 
-        // --- Final Execution ---
+        window.handleMyDragStart = (e, id) => { 
+            if (!window.requireAuth()) { e.preventDefault(); return; } 
+            e.target.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/mysite', id); 
+        };
+        window.handleMyDragEnd = (e) => { e.target.style.opacity = '1'; };
+        window.handleMyDrop = async (e, dropLocation, targetSiteId = null) => {
+            e.preventDefault(); e.stopPropagation();
+            const draggedId = e.dataTransfer.getData('application/mysite');
+            if (!draggedId || !currentUser) return;
+            const draggedIdx = mySites.findIndex(s => s.id === draggedId);
+            if (draggedIdx === -1) return;
+            const draggedItem = mySites[draggedIdx];
+            draggedItem.location = dropLocation;
+            mySites.splice(draggedIdx, 1);
+            if (targetSiteId && targetSiteId !== draggedId) {
+                const targetIdx = mySites.findIndex(s => s.id === targetSiteId);
+                if (targetIdx !== -1) mySites.splice(targetIdx, 0, draggedItem); else mySites.push(draggedItem);
+            } else { mySites.push(draggedItem); }
+            window.renderMySites(); window.renderMySitesList();
+            const baseTime = Date.now(); 
+            const batch = mySites.map((s, i) => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', s.id), { createdAt: baseTime + i, location: s.location || 'left' }));
+            await Promise.all(batch);
+        };
+
+        // --- Init Execution ---
         document.getElementById('addTodoBtn').onclick = window.addTodo;
         document.getElementById('todoInput').onkeypress = (e) => { if (e.key === 'Enter') window.addTodo(); };
         document.getElementById('submitSiteBtn').onclick = window.submitSite;
         document.getElementById('saveCalendarSettingsBtn').onclick = window.saveCalendarSettings;
         
-        // Initial Fetch
         window.fetchExchangeRate(); 
         setInterval(window.fetchExchangeRate, 60000);
         window.updateCalendarIframe();
