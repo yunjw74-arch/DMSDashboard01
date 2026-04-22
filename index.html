@@ -223,7 +223,7 @@
         </div>
     </div>
 
-    <!-- 통합 관리 모달 -->
+    <!-- Quick Access 관리 모달 -->
     <div id="mySitesManagerModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-2xl border flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center mb-6">
@@ -274,6 +274,27 @@
                     </label>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 카테고리 내 아이콘 관리 모달 -->
+    <div id="categoryManagerModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[2000] backdrop-blur-sm p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-sm:max-w-sm border flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="catManagerTitle" class="text-lg font-black text-gray-800">카테고리 관리</h3>
+                <button onclick="window.closeCategoryManager()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-100 shrink-0">
+                <p class="text-[11px] font-bold text-gray-500 mb-3 uppercase tracking-wider">카테고리 이름 변경</p>
+                <div class="flex gap-2">
+                    <input type="text" id="editCategoryNameInput" class="flex-1 p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="window.saveCategoryName()" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 transition-colors shrink-0">변경</button>
+                </div>
+            </div>
+            
+            <p class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-wider shrink-0">등록된 아이콘 수정/삭제</p>
+            <div id="category-sites-list" class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar mb-2"></div>
         </div>
     </div>
 
@@ -334,12 +355,19 @@
         let calendarId = "ko.south_korea#holiday@group.v.calendar.google.com";
         let toolsVisibility = { showCalculator: false, showFedEx: false, showLedCalc: false };
         let activeDragId = null, dragStartPos = { x: 0, y: 0 }, noteStartPos = { x: 0, y: 0 }, dragMyIdx = -1;
-        let currentEditSiteId = null;   // 카테고리 내 사이트 수정용
-        let currentEditMySiteId = null; // Quick Access 사이트 수정용
+        let currentEditSiteId = null;   
+        let currentEditMySiteId = null; 
+        let currentManagingCategory = '';
 
         const getUserRoot = (uid) => `/artifacts/${appId}/users/${uid}`;
         
         // --- GLOBAL FUNCTIONS ---
+        // 환경에 구애받지 않는 안전한 고유 ID 생성 (crypto.randomUUID 폴백)
+        const generateId = () => {
+            return typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : 
+            Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
+        };
+
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             if (!toast) return;
@@ -382,7 +410,7 @@
             } catch (e) {}
         };
 
-        // --- Core Logics & Calculations ---
+        // --- Business Core Logics ---
         window.calculateTotal = () => {
             const p = parseFloat(document.getElementById('calc-price')?.value) || 0;
             const s = parseFloat(document.getElementById('calc-shipping')?.value) || 0;
@@ -516,7 +544,7 @@
             await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { tools: toolsVisibility }, { merge: true });
         };
 
-        // --- Firebase Handlers ---
+        // --- Firebase Core Listeners ---
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user && !user.isAnonymous) {
@@ -525,7 +553,6 @@
                 const uName = document.getElementById('user-display-name'); if(uName) uName.innerText = user.displayName || user.email.split('@')[0];
                 const uAvatar = document.getElementById('user-avatar'); if(user.photoURL && uAvatar) { uAvatar.src = user.photoURL; uAvatar.classList.remove('hidden'); }
                 startListeners(user.uid);
-                window.fetchExchangeRate();
             } else {
                 const loginBtn = document.getElementById('login-btn'); if(loginBtn) loginBtn.classList.remove('hidden');
                 const pArea = document.getElementById('user-profile-area'); if(pArea) pArea.classList.add('hidden');
@@ -551,7 +578,11 @@
                     setDoc(doc(db, ...pathArr, 'config', 'settings'), { categories: ['메인', '업무'], calendarId: "ko.south_korea#holiday@group.v.calendar.google.com", tools: {showCalculator: false, showFedEx: false, showLedCalc: false} }); 
                 }
             }, (err) => {}));
-            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.render(); }, (err) => {}));
+            unsubs.push(onSnapshot(collection(db, ...pathArr, 'sites'), (snap) => { 
+                sites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                window.render(); 
+                if(currentManagingCategory) window.renderCategoryManagerList();
+            }, (err) => {}));
             unsubs.push(onSnapshot(collection(db, ...pathArr, 'mySites'), (snap) => { 
                 mySites = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 mySites.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
@@ -561,9 +592,10 @@
             unsubs.push(onSnapshot(collection(db, ...pathArr, 'stickyNotes'), (snap) => { stickyNotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); window.renderStickyNotes(); }, (err) => {}));
         }
 
-        // --- Interaction Modals ---
-        window.openMySitesManager = () => { if (!window.requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
+        // --- Modals & Interactions ---
         
+        // 1. Quick Access 관리 모달
+        window.openMySitesManager = () => { if (!window.requireAuth()) return; document.getElementById('mySitesManagerModal').classList.remove('hidden'); };
         window.closeMySitesManager = () => { 
             document.getElementById('mySitesManagerModal').classList.add('hidden'); 
             currentEditMySiteId = null;
@@ -591,9 +623,72 @@
                 currentEditMySiteId = null;
                 document.getElementById('submitMySiteBtn').innerText = '추가하기';
             } else {
-                await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', crypto.randomUUID()), { name: n, url: finalU, location: loc, description: desc, createdAt: Date.now() });
+                await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'mySites', generateId()), { name: n, url: finalU, location: loc, description: desc, createdAt: Date.now() });
             }
             document.getElementById('newMyName').value = ''; document.getElementById('newMyUrl').value = ''; document.getElementById('newMyDesc').value = '';
+        };
+
+        // 2. 카테고리별 사이트 및 이름 관리 모달
+        window.openCategoryManager = (cat) => {
+            if (!window.requireAuth()) return;
+            currentManagingCategory = cat;
+            document.getElementById('catManagerTitle').innerText = `'${cat}' 관리`;
+            document.getElementById('editCategoryNameInput').value = cat;
+            window.renderCategoryManagerList();
+            document.getElementById('categoryManagerModal').classList.remove('hidden');
+        };
+
+        window.closeCategoryManager = () => {
+            document.getElementById('categoryManagerModal').classList.add('hidden');
+            currentManagingCategory = '';
+        };
+
+        window.saveCategoryName = async () => {
+            if (!window.requireAuth()) return;
+            const newName = document.getElementById('editCategoryNameInput').value.trim();
+            if (!newName || newName === currentManagingCategory) return;
+            
+            const updatedCategories = categories.map(c => c === currentManagingCategory ? newName : c);
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { categories: updatedCategories }, { merge: true });
+            
+            const sitesToUpdate = sites.filter(s => s.category === currentManagingCategory);
+            const batch = sitesToUpdate.map(s => updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', s.id), { category: newName }));
+            await Promise.all(batch);
+            
+            currentManagingCategory = newName;
+            document.getElementById('catManagerTitle').innerText = `'${newName}' 관리`;
+        };
+
+        window.renderCategoryManagerList = () => {
+            const list = document.getElementById('category-sites-list');
+            if (!list) return;
+            const catSites = sites.filter(s => s.category === currentManagingCategory).sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+            list.innerHTML = catSites.map(s => `
+                <div class="flex items-center justify-between bg-gray-50 border border-gray-100 p-2.5 rounded-lg shadow-sm">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 shrink-0 pointer-events-none">
+                        <span class="text-xs font-bold text-gray-700 truncate">${s.name}</span>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                        <button onclick="window.openEditModal('${s.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="아이콘 수정"><i class="fas fa-pen text-xs"></i></button>
+                        <button onclick="window.deleteSite('${s.id}')" class="text-red-400 hover:text-red-600 p-1" title="아이콘 삭제"><i class="fas fa-trash-alt text-xs"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // 3. 일반 카테고리/사이트 관리
+        window.deleteCategory = async (catName) => {
+            if (!window.requireAuth()) return;
+            if (!confirm(`'${catName}' 카테고리와 내부의 모든 아이콘을 삭제하시겠습니까?`)) return;
+            
+            const updatedCategories = categories.filter(c => c !== catName);
+            await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { categories: updatedCategories }, { merge: true });
+            
+            const sitesToDelete = sites.filter(s => s.category === catName);
+            const batch = sitesToDelete.map(s => deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', s.id)));
+            await Promise.all(batch);
+            window.showToast(`'${catName}' 카테고리가 삭제되었습니다.`);
         };
 
         window.openEditModal = (id) => {
@@ -631,11 +726,15 @@
                 await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', currentEditSiteId), { name: n, url: finalU, description: desc });
                 currentEditSiteId = null;
             } else {
-                await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', crypto.randomUUID()), { name: n, url: finalU, category: cat, description: desc, createdAt: Date.now() });
+                await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'sites', generateId()), { name: n, url: finalU, category: cat, description: desc, createdAt: Date.now() });
             }
             window.closeModal(); 
         };
 
+        window.addCategory = async () => { if (!window.requireAuth()) return; const n = prompt('새 카테고리 이름:'); if (n && n.trim()) { categories.push(n.trim()); await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { categories }, { merge: true }); } };
+        window.deleteSite = async (id, isMy = false) => { if (!window.requireAuth()) return; if (confirm('해당 아이콘을 삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), isMy ? 'mySites' : 'sites', id)); };
+        
+        // 4. 기타 모듈 동작
         window.openCalendarSettings = () => { if (!window.requireAuth()) return; document.getElementById('calendarSrcInput').value = calendarId; document.getElementById('calendarModal').classList.remove('hidden'); };
         window.closeCalendarModal = () => document.getElementById('calendarModal').classList.add('hidden');
         window.saveCalendarSettings = async () => { if (!window.requireAuth()) return; const v = document.getElementById('calendarSrcInput').value.trim(); if (v) { await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'config', 'settings'), { calendarId: v }, { merge: true }); window.closeCalendarModal(); } };
@@ -643,7 +742,11 @@
         window.toggleTodo = async (id, d) => await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id), { done: !d });
         window.deleteTodo = async (id) => await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id));
         window.updateTodoText = async (id, newText) => { if (!window.requireAuth()) return; if (newText.trim() !== '') { await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', id), { text: newText.trim() }); } };
-        window.addTodo = async () => { if (!window.requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', crypto.randomUUID()), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
+        window.addTodo = async () => { if (!window.requireAuth()) return; const i = document.getElementById('todoInput'); if (i.value.trim()) { const d = new Date(), p = `[${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}] `; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'todos', generateId()), { text: p + i.value.trim(), done: false, createdAt: Date.now() }); i.value = ''; } };
+
+        window.addStickyNote = async () => { if (!window.requireAuth()) return; const offset = (stickyNotes.length % 10) * 25; await setDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', generateId()), { text: '', x: 150 + offset, y: 150 + offset, width: 220, height: 220, color: '#fff9c4', createdAt: Date.now() }); };
+        window.deleteStickyNote = async (id) => { if (!window.requireAuth()) return; if (confirm('메모를 삭제하시겠습니까?')) await deleteDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id)); };
+        window.updateStickyNote = async (id, data) => { if (!window.requireAuth()) return; await updateDoc(doc(db, ...getUserRoot(currentUser.uid).split('/').filter(Boolean), 'stickyNotes', id), data); };
 
         // --- Render UI ---
         window.initStickyDrag = (e, id) => {
@@ -687,7 +790,7 @@
         };
         window.renderMySitesList = () => {
             const leftL = document.getElementById('my-sites-list-left'), rightL = document.getElementById('my-sites-list-right');
-            const item = (s, loc) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragend="window.handleMyDragEnd(event)" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, '${loc}', '${s.id}')"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-xs font-bold text-gray-700 truncate w-24">${s.name}</span></div><div class="flex gap-1"><button onclick="window.editMySite('${s.id}')" class="text-blue-400 hover:text-blue-600 p-1"><i class="fas fa-pen text-xs"></i></button><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1"><i class="fas fa-trash-alt text-xs"></i></button></div></div>`;
+            const item = (s, loc) => `<div class="flex items-center justify-between bg-white border border-gray-100 p-2.5 rounded-lg shadow-sm cursor-grab active:cursor-grabbing" draggable="true" ondragstart="window.handleMyDragStart(event, '${s.id}')" ondragend="window.handleMyDragEnd(event)" ondragover="event.preventDefault(); event.stopPropagation();" ondrop="window.handleMyDrop(event, '${loc}', '${s.id}')"><div class="flex items-center gap-3"><img src="https://www.google.com/s2/favicons?sz=64&domain=${s.url}" class="w-4 h-4 pointer-events-none"><span class="text-xs font-bold text-gray-700 truncate w-24">${s.name}</span></div><div class="flex gap-1"><button onclick="window.editMySite('${s.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="아이콘 수정"><i class="fas fa-pen text-xs"></i></button><button onclick="window.deleteSite('${s.id}', true)" class="text-red-400 hover:text-red-600 p-1" title="아이콘 삭제"><i class="fas fa-trash-alt text-xs"></i></button></div></div>`;
             if (leftL) leftL.innerHTML = mySites.filter(s => (s.location || 'left') === 'left').map(s => item(s, 'left')).join('');
             if (rightL) rightL.innerHTML = mySites.filter(s => s.location === 'right').map(s => item(s, 'right')).join('');
         };
@@ -696,8 +799,21 @@
             categories.forEach(cat => {
                 const sec = document.createElement('div'); sec.className = 'category-section bg-white border border-gray-200 border-b-[4px] border-b-gray-300 shadow-md px-5 py-2.5 rounded-2xl flex flex-col h-full';
                 const cs = sites.filter(s => s.category === cat).sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
-                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><div class="delete-btn opacity-0 absolute -top-1 -right-2 flex gap-0.5 z-10"><button onclick="event.preventDefault(); window.openEditModal('${site.id}')" class="bg-blue-500 hover:bg-blue-600 text-white w-4 h-4 rounded-full text-[8px] flex items-center justify-center shadow-sm" title="수정"><i class="fas fa-pen"></i></button><button onclick="event.preventDefault(); window.deleteSite('${site.id}')" class="bg-red-500 hover:bg-red-600 text-white w-4 h-4 rounded-full text-[8px] flex items-center justify-center shadow-sm" title="삭제"><i class="fas fa-times"></i></button></div><a href="${site.url}" target="_blank" title="${site.description ? site.name + '&#10;' + site.description : site.name}" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
-                sec.innerHTML = `<div class="flex items-center mb-0 group"><h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2></div><div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sh}<div class="flex flex-col items-center group cursor-pointer p-1" onclick="window.openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div></div>`;
+                
+                // 기존 디자인 유지: 각각의 사이트 카드에는 우상단에 X(삭제) 버튼만 남김
+                const sh = cs.map(site => `<div class="site-card relative flex flex-col items-center group p-1 transition-all"><div class="delete-btn opacity-0 absolute -top-0.5 right-0.5 z-10"><button onclick="event.preventDefault(); window.deleteSite('${site.id}')" class="bg-red-500 hover:bg-red-600 text-white w-3.5 h-3.5 rounded-full text-[7px] flex items-center justify-center shadow-sm" title="삭제"><i class="fas fa-times"></i></button></div><a href="${site.url}" target="_blank" title="${site.description ? site.name + '&#10;' + site.description : site.name}" class="flex flex-col items-center text-center w-full"><div class="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-100 mb-1 overflow-hidden p-1 shadow-sm transition-transform group-hover:scale-105"><img src="https://www.google.com/s2/favicons?sz=64&domain=${site.url}" class="w-full h-full object-contain" onerror="this.src='https://www.google.com/favicon.ico'"></div><span class="text-[10px] font-medium text-gray-700 truncate w-full px-0.5 leading-tight">${site.name}</span></a></div>`).join('');
+                
+                // 카테고리 헤더 우측 끝에 수정용 연필, 삭제 아이콘 배치 (호버 시 표시)
+                sec.innerHTML = `<div class="flex items-center justify-between mb-2 group category-header">
+                                    <h2 class="text-xs font-bold text-gray-700 border-l-[2px] border-blue-500 pl-1.5 flex items-center gap-1 mr-2"><i class="fas fa-folder text-blue-400"></i> ${cat}</h2>
+                                    <div class="edit-tools opacity-0 transition-opacity flex gap-2">
+                                        <button onclick="window.openCategoryManager('${cat}')" class="text-gray-400 hover:text-blue-500" title="카테고리 수정 및 관리"><i class="fas fa-pen text-[10px]"></i></button>
+                                        <button onclick="window.deleteCategory('${cat}')" class="text-gray-400 hover:text-red-500" title="카테고리 삭제"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                                    </div>
+                                 </div>
+                                 <div class="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-0.5 items-start min-h-[45px]">${sh}
+                                    <div class="flex flex-col items-center group cursor-pointer p-1" onclick="window.openQuickAddModal('${cat}')"><div class="w-8 h-8 rounded-full flex items-center justify-center border border-dashed border-gray-300 mb-1 hover:border-blue-500 hover:bg-blue-50 transition-all"><i class="fas fa-plus text-gray-300 group-hover:text-blue-500 text-[10px]"></i></div></div>
+                                 </div>`;
                 m.appendChild(sec);
             });
         };
@@ -707,9 +823,9 @@
             l.innerHTML = todos.length === 0 ? '<li class="text-xs text-gray-400 text-center py-4">할일 없음</li>' : todos.map(t => `<li class="flex items-start justify-between group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent"><div class="flex items-start gap-2 flex-1"><div class="w-3.5 h-3.5 mt-0.5 rounded border flex items-center justify-center cursor-pointer shrink-0 ${t.done ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 text-transparent'}" onclick="window.toggleTodo('${t.id}', ${t.done})"><i class="fas fa-check text-[7px]"></i></div><span class="text-[11px] ${t.done ? 'text-gray-400 line-through' : 'text-gray-700'} flex-1 leading-tight outline-none hover:bg-white focus:bg-white focus:ring-1 focus:ring-blue-200 rounded px-1 -ml-1 transition-colors cursor-text" contenteditable="true" spellcheck="false" onblur="window.updateTodoText('${t.id}', this.textContent)" onkeydown="if(event.key === 'Enter'){event.preventDefault(); this.blur();}">${t.text}</span></div><button onclick="window.deleteTodo('${t.id}')" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times text-[9px]"></i></button></li>`).join('');
         };
 
-        window.handleMyDragStart = (e, idx) => { 
+        window.handleMyDragStart = (e, id) => { 
             if (!window.requireAuth()) { e.preventDefault(); return; } 
-            e.target.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/mysite', idx); 
+            e.target.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/mysite', id); 
         };
         window.handleMyDragEnd = (e) => { e.target.style.opacity = '1'; };
         window.handleMyDrop = async (e, dropLocation, targetSiteId = null) => {
